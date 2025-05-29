@@ -1,0 +1,146 @@
+# 程序： 定义列表
+<program> -> <declaration_list>
+
+# 定义列表： 若干个 定义
+<declaration_list> -> <declaration> <declaration_list>
+<declaration_list> -> ~
+
+# 定义： 类型 标识符 定义尾
+<declaration> -> type id <dec_tail>
+
+# 定义尾： ;                     表示定义普通变量
+<dec_tail> -> ;
+
+# 定义尾： [常数]                 表示定义数组
+<dec_tail> -> [ num ] ;
+
+# 定义尾： (参数列表) 复合表达式    表示定义函数
+<dec_tail> -> ( <params> ) <compound_stmt>
+
+# 参数列表： 参数 参数尾
+<params> -> <param> <params_tail>
+<params> -> ~
+
+# 参数： 数据类型 标识符
+<param> -> type id
+
+# 参数尾： 若干个 , 参数
+<params_tail> -> , <param> <params_tail>
+<params_tail> -> ~
+
+#         ...;        {...}   if...else...  while for   return ...;
+# 语句： 表达式语句 或 复合表达式 或 选择表达式 或 迭代表达式 或 返回表达式
+<statement> -> <expression_stmt>
+<statement> -> <compound_stmt>
+<statement> -> <selection_stmt>
+<statement> -> <iteration_stmt>
+<statement> -> <return_stmt>
+
+# 表达式语句： 表达式 ; 或 ;
+<expression_stmt> -> <expression> ;
+<expression_stmt> -> ;
+
+# 复合表达式： { 复合列表 }
+<compound_stmt> -> { <compound_list> }
+
+# 复合列表: 若干 复合语句
+<compound_list> -> <compound> <compound_list>
+<compound_list> -> ~
+
+# 复合语句： 变量定义 或 语句
+<compound> -> <var_dec>
+<compound> -> <statement>
+
+# 变量定义： 数据类型 标识符 变量定义尾
+<var_dec> -> type id <var_dec_tail> ;
+
+#变量定义尾：[常数] 或 空
+<var_dec_tail> -> [ num ]
+<var_dec_tail> -> ~
+
+# 选择表达式： if ( 表达式 ) 语句 否则语句
+<selection_stmt> -> if ( <expression> ) <statement> <else_part>
+
+# 否则语句： else 语句 或 空
+<else_part> -> else <statement>
+<else_part> -> ~
+
+# 迭代表达式： while ( 表达式 ) 语句 或 for ( 表达式 ; 表达式 ; 表达式 ) 语句
+<iteration_stmt> -> while ( <expression> ) <statement>
+<iteration_stmt> -> for ( <expression> ; <expression> ; <expression> ) <statement>
+
+# 返回表达式： return 返回尾
+<return_stmt> -> return <return_tail> ;
+
+# 返回尾： 表达式 或 空
+<return_tail> -> <expression>
+<return_tail> -> ~
+
+# 表达式： 算术表达式 表达式尾：
+<expression> -> <additive_expression> <expression_tail>
+
+# 表达式尾： 关系运算符 算术表达式 或 空
+<expression_tail> -> <relop> <additive_expression>
+<expression_tail> -> ~
+
+# 关系运算符： <= 或 < 或 > 或 >= 或 == 或 !=
+<relop> -> <=
+<relop> -> <
+<relop> -> >
+<relop> -> >=
+<relop> -> ==
+<relop> -> !=
+
+# 算术表达式： 项 算术表达式尾
+<additive_expression> -> <term> <additive_expression_tail>
+
+# 算术表达式尾： 若干个 加减运算符 项
+<additive_expression_tail> -> <addop> <term> <additive_expression_tail>
+<additive_expression_tail> -> ~
+
+# 加减运算： + 或 -
+<addop> -> +
+<addop> -> -
+
+# 项： 因子 项尾
+<term> -> <factor> <term_tail>
+
+# 项尾： 若干个 乘除运算 因子
+<term_tail> -> <mulop> <factor> <term_tail>
+<term_tail> -> ~
+
+# 乘除运算： * 或 /
+<mulop> -> *
+<mulop> -> /
+
+# 因子： ( 表达式 ) 或 变量 或 函数调用 或 常量
+<factor> -> ( <expression> )
+<factor> -> id <id_tail>
+<factor> -> num
+
+# 标识符尾： ( 传参列表 )   用于函数调用
+<id_tail> -> ( <args> )
+
+# 标识符尾： 数组索引       用于数组取值或赋值
+<id_tail> -> <arr_idx>
+
+# 标识符尾： = 表达式      用于普通变量赋值
+<id_tail> -> = <expression>
+
+# 标识符尾： 空           用于普通变量取值
+<id_tail> -> ~
+
+# 传参列表： 表达式 传参尾 或 空
+<args> -> <expression> <arg_tail>
+<args> -> ~
+
+# 传参尾： 若干个 , 表达式
+<arg_tail> -> , <expression> <arg_tail>
+<arg_tail> -> ~
+
+# 数组索引： [ 表达式 ] 数组索引尾
+<arr_idx> -> [ <expression> ] <arr_idx_tail>
+
+# 数组索引尾: = 表达式 或 空
+<arr_idx_tail> -> = <expression>
+<arr_idx_tail> -> ~
