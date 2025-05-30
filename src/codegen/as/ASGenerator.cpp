@@ -125,7 +125,6 @@ void ASGenerator::dec_global_var(const std::string &var_name, const std::string 
 
 void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size)
 {
-    //asc += "\tpushq $0\n";                  //      pushq $0
     asc += "\tsubq $" + size + ", %rsp\n";      //      subq ${size}, %rsp
     mOffset -= std::stoi(size);
     addr_map.insert(std::pair<std::string, std::string>(var_name, std::to_string(mOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
@@ -229,15 +228,19 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     // arg is a variable
     else
     {
-        asc += "\tmovq " + getVarCode(arg) + ", %rax\n";                    //      movq {arg}, %rax
-        asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";                 //      movq %rax, {result}
+        const std::string &result_code = getVarCode(result, true);
+        if (result_code == "%rax")
+        {//    movq %rax, %rax
+            return;
+        }
+        asc += "\tmovq " + getVarCode(arg) + ", %rax\n";        //      movq {arg}, %rax
+        asc += "\tmovq %rax, " + result_code + "\n";            //      movq %rax, {result}
     }
 }
 
 void ASGenerator::call_func(const std::string &params_count, const std::string &func_name)
 {
     asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
-    //asc += "\taddq $" + std::to_string(8 * std::stoi(params_count)) + ", %rsp\n";       //      addq ${size}, %rsp
 }
 
 void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
