@@ -164,7 +164,7 @@ std::vector<Token> Lexer::exec()
         break;
 
         //  white
-        case ' ': case '\n':
+        case ' ': case '\t': case '\n':
             skip_white();
             pos --;
         break;
@@ -203,7 +203,7 @@ void Lexer::skip_white()
             line ++;
         }
         ch = next();
-    } while (ch == ' ' || ch == '\n');
+    } while (ch == ' ' || ch == '\t' || ch == '\n');
 }
 
 Token Lexer::getIdentifier()
