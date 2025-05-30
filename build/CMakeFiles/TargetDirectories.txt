@@ -1,3 +1,0 @@
-/home/zyc/桌面/code/mycc/build/CMakeFiles/mycc.dir
-/home/zyc/桌面/code/mycc/build/CMakeFiles/edit_cache.dir
-/home/zyc/桌面/code/mycc/build/CMakeFiles/rebuild_cache.dir
