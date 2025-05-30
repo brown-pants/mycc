@@ -228,13 +228,8 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     // arg is a variable
     else
     {
-        const std::string &result_code = getVarCode(result, true);
-        if (result_code == "%rax")
-        {//    movq %rax, %rax
-            return;
-        }
-        asc += "\tmovq " + getVarCode(arg) + ", %rax\n";        //      movq {arg}, %rax
-        asc += "\tmovq %rax, " + result_code + "\n";            //      movq %rax, {result}
+        asc += "\tmovq " + getVarCode(arg) + ", %rax\n";                 //      movq {arg}, %rax
+        asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";        //      movq %rax, {result}
     }
 }
 
