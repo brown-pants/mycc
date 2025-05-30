@@ -132,7 +132,10 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
     /* <expression_stmt> -> <expression> ; | ; */
     case Parser::expression_stmt:
     {
-        do_expression(node.childs[0]);
+        if (!node.childs.empty())
+        {
+            do_expression(node.childs[0]);
+        }
         break;
     }
     /* <selection_stmt> -> if ( <expression> ) <statement> <else_part> */
