@@ -157,7 +157,7 @@ void ASGenerator::end_func(const std::string &func_name)
 void ASGenerator::dec_param(const std::string &param_name, const std::string &size)
 {
     paramOffset += 8;
-    asc += "\tpushq " + std::to_string(paramOffset) + "(%rbp)\n";                                            //      pushq {paramOffset}(%rbp)
+    asc += "\tpushq " + std::to_string(paramOffset) + "(%rbp)\n";        //      pushq {paramOffset}(%rbp)
     mOffset -= std::stoi(size);
     addr_map.insert(std::pair<std::string, std::string>(param_name, std::to_string(mOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
     localVar_set.insert(param_name);
