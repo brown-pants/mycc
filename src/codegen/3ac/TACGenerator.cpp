@@ -239,7 +239,9 @@ void TACGenerator::dec_var(bool local, const Token &type, const Token &id, bool 
         std::string newName = id.lexeme();
         if (local)
         {
-            newName += "~" + std::to_string(scope_counter);
+            //newName += "~" + std::to_string(scope_counter);
+            const std::string &suffix = scopeStack.top();
+            newName += "~" + suffix.substr(suffix.find('~') + 1);
         }
         if (!isArray)
         {
