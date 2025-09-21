@@ -36,6 +36,8 @@ private:
 
     void dec_mycc_putchar();
     void dec_start();
+
+    bool isOutOfInt32Range(int64_t number) const;
 };
 
 #endif

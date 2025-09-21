@@ -1,4 +1,5 @@
 #include "ASGenerator.h"
+#include <limits>
 
 ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac)
     : tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0)
@@ -166,7 +167,16 @@ void ASGenerator::param(const std::string &param_name)
     // param_name is a interage or a character
     if (std::isdigit(param_name[0]) || param_name[0] == '\'')
     {
-        asc += "\tpushq $" + param_name + "\n";             //      pushq ${interage | character}
+        // out of int32 range
+        if (std::isdigit(param_name[0]) && isOutOfInt32Range(std::stoll(param_name)))
+        {
+            asc += "\tmovabsq $" + param_name + ", %rax\n";     //      movabsq ${int64}, %rax
+            asc += "\tpushq %rax\n";                            //      pushq %rax
+        }
+        else
+        {
+            asc += "\tpushq $" + param_name + "\n";             //      pushq ${interage | character}
+        }
     }
     // param_name is a variable
     else
@@ -221,7 +231,16 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     // arg is a interage or a character
     if (std::isdigit(arg[0]) || arg[0] == '\'')
     {
-        asc += "\tmovq $" + arg + ", " + getVarCode(result, true) + "\n";         //      movq ${interage | character}, {result}
+        // out of int32 range
+        if (std::isdigit(arg[0]) && isOutOfInt32Range(std::stoll(arg)))
+        {
+            asc += "\tmovabsq $" + arg + ", %rax\n";                            //      movabsq ${int64}, %rax
+            asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";           //      movq %rax, {result}
+        }
+        else 
+        {
+            asc += "\tmovq $" + arg + ", " + getVarCode(result, true) + "\n";   //      movq ${interage | character}, {result}
+        }
     }
     // arg is a variable
     else
@@ -275,7 +294,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // Both of arg1 and arg2 is number
     if (sign1 && sign2)
     {
-        int num;
+        long long num;
         if (op == "+")
         {
             num = num1 + num2;
@@ -292,14 +311,27 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         {
             num = num1 / num2;
         }
-        asc += "\tmovq $" + std::to_string(num) + ", " + getVarCode(result) + "\n";    //      movq ${num}, {result}
+        if (isOutOfInt32Range(num))
+        {
+            asc += "\tmovabsq $" + std::to_string(num) + ", %rax\n";    //      movabsq ${num}, %rax
+            asc += "\tmovq %rax, " + getVarCode(result) + "\n";          //      movq %rax, {result}
+        }
+        else
+        {
+            asc += "\tmovq $" + std::to_string(num) + ", " + getVarCode(result) + "\n";    //      movq ${num}, {result}
+        }
         return;
     }
     // At least one of arg1 and arg2 is not number
     std::string code1, code2, result_code;
+    std::string mov1 = "movq", mov2 = "movq";
     if (sign1)
     {
         code1 = "$" + std::to_string(num1);
+        if (isOutOfInt32Range(num1))
+        {
+            mov1 = "movabsq";
+        }
     }
     else
     {
@@ -308,6 +340,10 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     if (sign2)
     {
         code2 = "$" + std::to_string(num2);
+        if (isOutOfInt32Range(num2))
+        {
+            mov2 = "movabsq";
+        }
     }
     else
     {
@@ -334,17 +370,17 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     if (op == "/")
     {
         result_code = getVarCode(result);
-        asc += "\tmovq " + code1 + ", %rax\n";                          //      movq {arg1}, %rax
+        asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq} {arg1}, %rax
         asc += "\tcqto\n";                                              //      cqto
-        asc += "\tmovq " + code2 + ", %rcx\n";                          //      movq {arg2}, %rcx
-        asc += "\tdivq %rcx\n";                                         //      divq %rcx
+        asc += "\t" + mov2 + " " + code2 + ", %rcx\n";                  //      {movq | movabsq} {arg2}, %rcx
+        asc += "\tidivq %rcx\n";                                        //      idivq %rcx
         asc += "\tmovq %rax, " + result_code + "\n";                    //      movq %rax, {result}
     }
     // addq, subq, imulq
     else
     {
         result_code = getVarCode(result);
-        asc += "\tmovq " + code1 + ", %rax\n";                          //      movq {arg1}, %rax
+        asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq} {arg1}, %rax
         asc += "\t" + as_op + " " + code2 + ", %rax\n";                 //      {as_op} {arg2}, %rax
         asc += "\tmovq %rax, " + result_code + "\n";                    //      movq %rax, {result}
     }
@@ -418,9 +454,14 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     }
     // At least one of arg1 and arg2 is not number
     std::string code1, code2, result_code;
+    std::string mov1 = "movq", mov2 = "movq";
     if (sign1)
     {
         code1 = "$" + std::to_string(num1);
+        if (isOutOfInt32Range(num1))
+        {
+            mov1 = "movabsq";
+        }
     }
     else
     {
@@ -429,6 +470,10 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     if (sign2)
     {
         code2 = "$" + std::to_string(num2);
+        if (isOutOfInt32Range(num2))
+        {
+            mov2 = "movabsq";
+        }
     }
     else
     {
@@ -459,8 +504,8 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         as_op = "setl";
     }
-    asc += "\tmovq " + code1 + ", %rax\n";              //      movq {arg1}, %rax
-    asc += "\tmovq " + code2 + ", %rbx\n";              //      movq {arg2}, %rbx
+    asc += "\t" + mov1 + " " + code1 + ", %rax\n";      //      {movq | movabsq} {arg1}, %rax
+    asc += "\t" + mov2 + " " + code2 + ", %rbx\n";      //      {movq | movabsq} {arg2}, %rbx
     asc += "\tcmp %rbx, %rax\n";                        //      cmp %rbx, %rax
     asc += "\t" + as_op + " %cl\n";                     //      {as_op} %cl
     asc += "\tmovzbq %cl, %rax\n";                      //      movzbq %cl, %rax
@@ -490,4 +535,10 @@ void ASGenerator::dec_start()
             "\tmovq $60, %rax\n"
             "\txorq %rdi, %rdi\n"
             "\tsyscall\n";
+}
+
+bool ASGenerator::isOutOfInt32Range(int64_t number) const
+{
+    return number < std::numeric_limits<int32_t>::min() || 
+           number > std::numeric_limits<int32_t>::max();
 }
