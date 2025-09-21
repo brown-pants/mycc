@@ -89,7 +89,7 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         {
             // dec arr
             const Token &num = dec_tail.tokens[1];
-            dec_var(false, type, id, true, std::stoi(num.lexeme()));
+            dec_var(false, type, id, true, std::stoll(num.lexeme()));
         }
         /* ( <params> ) <compound_stmt> */
         else if (dec_tail.tokens[0].type() == Token::OpenParen)
@@ -125,7 +125,7 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         else
         {
             const Token &num = var_dec_tail.tokens[1];
-            dec_var(true, type, id, true, std::stoi(num.lexeme()));
+            dec_var(true, type, id, true, std::stoll(num.lexeme()));
         }
         break;
     }

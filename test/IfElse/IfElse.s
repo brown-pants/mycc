@@ -2,13 +2,11 @@
 mycc_putchar:
 	pushq %rbp
 	movq %rsp, %rbp
-	pushq 16(%rbp)
 	movq $1, %rax
 	movq $1, %rdi
-	leaq -8(%rbp), %rsi
+	leaq 16(%rbp), %rsi
 	movq $1, %rdx
 	syscall
-	addq $8, %rsp
 	leave
 	retq
 
@@ -16,468 +14,452 @@ mycc_putchar:
 func:
 	pushq %rbp
 	movq %rsp, %rbp
-	pushq 16(%rbp)
-	pushq 24(%rbp)
-	subq $8, %rsp
-	movq -8(%rbp), %rax
+	subq $504, %rsp
+	movq 16(%rbp), %rax
 	movq $1, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -24(%rbp)
-	cmpq $0, -24(%rbp)
+	movq %rax, -8(%rbp)
+	cmpq $0, -8(%rbp)
 	jne .lable0
 	jmp .lable1
 .lable0:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $1, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -32(%rbp)
-	cmpq $0, -32(%rbp)
+	movq %rax, -16(%rbp)
+	cmpq $0, -16(%rbp)
 	jne .lable2
 	jmp .lable3
 .lable2:
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -40(%rbp)
+	movq %rax, -24(%rbp)
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -48(%rbp)
+	movq %rax, -32(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -56(%rbp)
+	movq %rax, -40(%rbp)
 	jmp .lable4
 .lable3:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $2, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -64(%rbp)
-	cmpq $0, -64(%rbp)
+	movq %rax, -48(%rbp)
+	cmpq $0, -48(%rbp)
 	jne .lable5
 	jmp .lable6
 .lable5:
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -72(%rbp)
+	movq %rax, -56(%rbp)
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -80(%rbp)
+	movq %rax, -64(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -88(%rbp)
+	movq %rax, -72(%rbp)
 	jmp .lable7
 .lable6:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $3, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -96(%rbp)
-	cmpq $0, -96(%rbp)
+	movq %rax, -80(%rbp)
+	cmpq $0, -80(%rbp)
 	jne .lable8
 	jmp .lable9
 .lable8:
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -104(%rbp)
+	movq %rax, -88(%rbp)
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -112(%rbp)
+	movq %rax, -96(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -120(%rbp)
+	movq %rax, -104(%rbp)
 	jmp .lable10
 .lable9:
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -128(%rbp)
+	movq %rax, -112(%rbp)
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -136(%rbp)
+	movq %rax, -120(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -144(%rbp)
+	movq %rax, -128(%rbp)
 .lable10:
 .lable7:
 .lable4:
 	jmp .lable11
 .lable1:
-	subq $8, %rsp
-	movq -8(%rbp), %rax
+	movq 16(%rbp), %rax
 	movq $2, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -152(%rbp)
-	cmpq $0, -152(%rbp)
+	movq %rax, -136(%rbp)
+	cmpq $0, -136(%rbp)
 	jne .lable12
 	jmp .lable13
 .lable12:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $1, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -160(%rbp)
-	cmpq $0, -160(%rbp)
+	movq %rax, -144(%rbp)
+	cmpq $0, -144(%rbp)
 	jne .lable14
 	jmp .lable15
 .lable14:
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -168(%rbp)
+	movq %rax, -152(%rbp)
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -176(%rbp)
+	movq %rax, -160(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -184(%rbp)
+	movq %rax, -168(%rbp)
 	jmp .lable16
 .lable15:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $2, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -192(%rbp)
-	cmpq $0, -192(%rbp)
+	movq %rax, -176(%rbp)
+	cmpq $0, -176(%rbp)
 	jne .lable17
 	jmp .lable18
 .lable17:
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -200(%rbp)
+	movq %rax, -184(%rbp)
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -208(%rbp)
+	movq %rax, -192(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -216(%rbp)
+	movq %rax, -200(%rbp)
 	jmp .lable19
 .lable18:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $3, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -224(%rbp)
-	cmpq $0, -224(%rbp)
+	movq %rax, -208(%rbp)
+	cmpq $0, -208(%rbp)
 	jne .lable20
 	jmp .lable21
 .lable20:
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -232(%rbp)
+	movq %rax, -216(%rbp)
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -240(%rbp)
+	movq %rax, -224(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -248(%rbp)
+	movq %rax, -232(%rbp)
 	jmp .lable22
 .lable21:
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -256(%rbp)
+	movq %rax, -240(%rbp)
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -264(%rbp)
+	movq %rax, -248(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -272(%rbp)
+	movq %rax, -256(%rbp)
 .lable22:
 .lable19:
 .lable16:
 	jmp .lable23
 .lable13:
-	subq $8, %rsp
-	movq -8(%rbp), %rax
+	movq 16(%rbp), %rax
 	movq $3, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -280(%rbp)
-	cmpq $0, -280(%rbp)
+	movq %rax, -264(%rbp)
+	cmpq $0, -264(%rbp)
 	jne .lable24
 	jmp .lable25
 .lable24:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $1, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -288(%rbp)
-	cmpq $0, -288(%rbp)
+	movq %rax, -272(%rbp)
+	cmpq $0, -272(%rbp)
 	jne .lable26
 	jmp .lable27
 .lable26:
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -296(%rbp)
+	movq %rax, -280(%rbp)
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -304(%rbp)
+	movq %rax, -288(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -312(%rbp)
+	movq %rax, -296(%rbp)
 	jmp .lable28
 .lable27:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $2, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -320(%rbp)
-	cmpq $0, -320(%rbp)
+	movq %rax, -304(%rbp)
+	cmpq $0, -304(%rbp)
 	jne .lable29
 	jmp .lable30
 .lable29:
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -328(%rbp)
+	movq %rax, -312(%rbp)
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -336(%rbp)
+	movq %rax, -320(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -344(%rbp)
+	movq %rax, -328(%rbp)
 	jmp .lable31
 .lable30:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $3, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -352(%rbp)
-	cmpq $0, -352(%rbp)
+	movq %rax, -336(%rbp)
+	cmpq $0, -336(%rbp)
 	jne .lable32
 	jmp .lable33
 .lable32:
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -360(%rbp)
+	movq %rax, -344(%rbp)
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -368(%rbp)
+	movq %rax, -352(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -376(%rbp)
+	movq %rax, -360(%rbp)
 	jmp .lable34
 .lable33:
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -384(%rbp)
+	movq %rax, -368(%rbp)
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -392(%rbp)
+	movq %rax, -376(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -400(%rbp)
+	movq %rax, -384(%rbp)
 .lable34:
 .lable31:
 .lable28:
 	jmp .lable35
 .lable25:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $1, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -408(%rbp)
-	cmpq $0, -408(%rbp)
+	movq %rax, -392(%rbp)
+	cmpq $0, -392(%rbp)
 	jne .lable36
 	jmp .lable37
 .lable36:
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -416(%rbp)
+	movq %rax, -400(%rbp)
 	pushq $'1'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -424(%rbp)
+	movq %rax, -408(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -432(%rbp)
+	movq %rax, -416(%rbp)
 	jmp .lable38
 .lable37:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $2, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -440(%rbp)
-	cmpq $0, -440(%rbp)
+	movq %rax, -424(%rbp)
+	cmpq $0, -424(%rbp)
 	jne .lable39
 	jmp .lable40
 .lable39:
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -448(%rbp)
+	movq %rax, -432(%rbp)
 	pushq $'2'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -456(%rbp)
+	movq %rax, -440(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -464(%rbp)
+	movq %rax, -448(%rbp)
 	jmp .lable41
 .lable40:
-	subq $8, %rsp
-	movq -16(%rbp), %rax
+	movq 24(%rbp), %rax
 	movq $3, %rbx
 	cmp %rbx, %rax
 	sete %cl
 	movzbq %cl, %rax
-	movq %rax, -472(%rbp)
-	cmpq $0, -472(%rbp)
+	movq %rax, -456(%rbp)
+	cmpq $0, -456(%rbp)
 	jne .lable42
 	jmp .lable43
 .lable42:
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -480(%rbp)
+	movq %rax, -464(%rbp)
 	pushq $'3'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -488(%rbp)
+	movq %rax, -472(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -496(%rbp)
+	movq %rax, -480(%rbp)
 	jmp .lable44
 .lable43:
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -504(%rbp)
+	movq %rax, -488(%rbp)
 	pushq $'$'
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -512(%rbp)
+	movq %rax, -496(%rbp)
 	pushq $'
 '
 	call mycc_putchar
-	subq $8, %rsp
+	addq $8, %rsp
 	movq %rax, %rax
-	movq %rax, -520(%rbp)
+	movq %rax, -504(%rbp)
 .lable44:
 .lable41:
 .lable38:
@@ -485,18 +467,15 @@ func:
 .lable23:
 .lable11:
 func_exit:
-	addq $520, %rsp
 	leave
 	retq
 .text
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $8, %rsp
-	subq $8, %rsp
+	subq $64, %rsp
 	movq $1, -8(%rbp)
 .lable45:
-	subq $8, %rsp
 	movq -8(%rbp), %rax
 	movq $4, %rbx
 	cmp %rbx, %rax
@@ -509,7 +488,6 @@ main:
 .lable46:
 	movq $1, -16(%rbp)
 .lable48:
-	subq $8, %rsp
 	movq -16(%rbp), %rax
 	movq $4, %rbx
 	cmp %rbx, %rax
@@ -523,10 +501,9 @@ main:
 	pushq -16(%rbp)
 	pushq -8(%rbp)
 	call func
-	subq $8, %rsp
+	addq $16, %rsp
 	movq %rax, %rax
 	movq %rax, -40(%rbp)
-	subq $8, %rsp
 	movq -16(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -48(%rbp)
@@ -534,7 +511,6 @@ main:
 	movq %rax, -16(%rbp)
 	jmp .lable48
 .lable50:
-	subq $8, %rsp
 	movq -8(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -56(%rbp)
@@ -542,11 +518,9 @@ main:
 	movq %rax, -8(%rbp)
 	jmp .lable45
 .lable47:
-	subq $8, %rsp
 	movq $0, %rax
 	jmp main_exit
 main_exit:
-	addq $64, %rsp
 	leave
 	retq
 .global _start

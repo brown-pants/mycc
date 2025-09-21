@@ -17,6 +17,7 @@ private:
     std::string asc;
     int mOffset;
     int paramOffset;
+    int sub_rsp_pos;
 
     std::string getVarCode(const std::string &var, bool isWrite = false);
     void dec_global_var(const std::string &var_name, const std::string &size);

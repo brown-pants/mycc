@@ -1,7 +1,7 @@
 #include "ASGenerator.h"
 
 ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac)
-    : tac(tac), mOffset(0), paramOffset(8)
+    : tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0)
 {
 
 }
@@ -125,8 +125,7 @@ void ASGenerator::dec_global_var(const std::string &var_name, const std::string 
 
 void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size)
 {
-    asc += "\tsubq $" + size + ", %rsp\n";      //      subq ${size}, %rsp
-    mOffset -= std::stoi(size);
+    mOffset -= std::stoll(size);
     addr_map.insert(std::pair<std::string, std::string>(var_name, std::to_string(mOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
     localVar_set.insert(var_name);
 }
@@ -137,11 +136,12 @@ void ASGenerator::begin_func(const std::string &func_name)
     asc += func_name + ":\n";               // {func_name}:
     asc += "\tpushq %rbp\n";                //      pushq %rbp
     asc += "\tmovq %rsp, %rbp\n";           //      movq %rsp, %rbp
+    sub_rsp_pos = asc.length();
 }
 
 void ASGenerator::end_func(const std::string &func_name)
 {
-    asc += "\taddq $" + std::to_string(-mOffset) + ", %rsp\n";  //      addq ${-mOffset}, %rsp
+    asc.insert(sub_rsp_pos, "\tsubq $" + std::to_string(-mOffset) + ", %rsp\n");      //      subq ${-mOffset}, %rsp
     asc += "\tleave\n";                                         //      {func_name}:
     asc += "\tretq\n";                                          //      retq
     // clear
@@ -157,9 +157,7 @@ void ASGenerator::end_func(const std::string &func_name)
 void ASGenerator::dec_param(const std::string &param_name, const std::string &size)
 {
     paramOffset += 8;
-    asc += "\tpushq " + std::to_string(paramOffset) + "(%rbp)\n";        //      pushq {paramOffset}(%rbp)
-    mOffset -= std::stoi(size);
-    addr_map.insert(std::pair<std::string, std::string>(param_name, std::to_string(mOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
+    addr_map.insert(std::pair<std::string, std::string>(param_name, std::to_string(paramOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
     localVar_set.insert(param_name);
 }
 
@@ -192,7 +190,7 @@ void ASGenerator::if_goto(const std::string &condition, const std::string &label
     // condition is a interage
     if (std::isdigit(condition[0]))
     {
-        if (std::stoi(condition))
+        if (std::stoll(condition))
         {
             goto_label(label);
         }
@@ -236,14 +234,15 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
 void ASGenerator::call_func(const std::string &params_count, const std::string &func_name)
 {
     asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
+    asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
 }
 
 void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
 {
     bool sign1 = false;
     bool sign2 = false;
-    int num1;
-    int num2;
+    long long num1;
+    long long num2;
     // undefined temp
     if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
     {
@@ -252,7 +251,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // arg1 is a interage
     if (std::isdigit(arg1[0]))
     {
-        num1 = std::stoi(arg1);
+        num1 = std::stoll(arg1);
         sign1 = true;
     }
     // arg1 is a character
@@ -264,7 +263,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // arg2 is a interage
     if (std::isdigit(arg2[0]))
     {
-        num2 = std::stoi(arg2);
+        num2 = std::stoll(arg2);
         sign2 = true;
     }
     // arg2 is a character
@@ -355,8 +354,8 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
 {
     bool sign1 = false;
     bool sign2 = false;
-    int num1;
-    int num2;
+    long long num1;
+    long long num2;
     // undefined temp
     if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
     {
@@ -365,7 +364,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     // arg1 is a interage
     if (std::isdigit(arg1[0]))
     {
-        num1 = std::stoi(arg1);
+        num1 = std::stoll(arg1);
         sign1 = true;
     }
     // arg1 is a character
@@ -377,7 +376,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     // arg2 is a interage
     if (std::isdigit(arg2[0]))
     {
-        num2 = std::stoi(arg2);
+        num2 = std::stoll(arg2);
         sign2 = true;
     }
     // arg2 is a character
@@ -474,13 +473,11 @@ void ASGenerator::dec_mycc_putchar()
             "mycc_putchar:\n"
             "\tpushq %rbp\n"
             "\tmovq %rsp, %rbp\n"
-            "\tpushq 16(%rbp)\n"
             "\tmovq $1, %rax\n"
             "\tmovq $1, %rdi\n"
-            "\tleaq -8(%rbp), %rsi\n"
+            "\tleaq 16(%rbp), %rsi\n"
             "\tmovq $1, %rdx\n"
             "\tsyscall\n"
-            "\taddq $8, %rsp\n"
             "\tleave\n"
             "\tretq\n\n";
 }
