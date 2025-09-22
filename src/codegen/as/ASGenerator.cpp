@@ -59,6 +59,9 @@ std::string ASGenerator::exec()
         case TACGenerator::Op_div:
             arithmetic("/", code.arg1, code.arg2, code.result);
             break;
+        case TACGenerator::Op_mod:
+            arithmetic("%", code.arg1, code.arg2, code.result);
+            break;
         case TACGenerator::Op_eq_eq:
             relational("==", code.arg1, code.arg2, code.result);
             break;
@@ -223,7 +226,7 @@ void ASGenerator::if_goto(const std::string &condition, const std::string &label
 
 void ASGenerator::assign(const std::string &arg, const std::string &result)
 {
-    // undefined temp
+    // result is undefined temp
     if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
     {
         dec_local_var(result, "8");
@@ -311,10 +314,14 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         {
             num = num1 / num2;
         }
+        else if (op == "%")
+        {
+            num = num1 % num2;
+        }
         if (isOutOfInt32Range(num))
         {
             asc += "\tmovabsq $" + std::to_string(num) + ", %rax\n";    //      movabsq ${num}, %rax
-            asc += "\tmovq %rax, " + getVarCode(result) + "\n";          //      movq %rax, {result}
+            asc += "\tmovq %rax, " + getVarCode(result) + "\n";         //      movq %rax, {result}
         }
         else
         {
@@ -362,19 +369,24 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     {
         as_op = "imulq";
     }
-    else if (op == "/")
-    {
-        as_op = "idivq";
-    }
     // idivq
-    if (op == "/")
+    if (op == "/" || op == "%")
     {
         result_code = getVarCode(result);
         asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq} {arg1}, %rax
         asc += "\tcqto\n";                                              //      cqto
         asc += "\t" + mov2 + " " + code2 + ", %rcx\n";                  //      {movq | movabsq} {arg2}, %rcx
         asc += "\tidivq %rcx\n";                                        //      idivq %rcx
-        asc += "\tmovq %rax, " + result_code + "\n";                    //      movq %rax, {result}
+        // quotient
+        if(op == "/")
+        {
+            asc += "\tmovq %rax, " + result_code + "\n";                    //      movq %rax, {result}
+        }
+        // remainder
+        else
+        {
+            asc += "\tmovq %rdx, " + result_code + "\n";                    //      movq %rdx, {result}
+        }
     }
     // addq, subq, imulq
     else

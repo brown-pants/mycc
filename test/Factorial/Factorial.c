@@ -1,14 +1,9 @@
-int mod(int a)
-{
-    return a - (a/10) * 10;
-}
-
 void printInt(int a)
 {
     if (a) 
     {
         printInt(a / 10);
-        mycc_putchar(mod(a) + '0');
+        mycc_putchar(a % 10 + '0');
     }
 }
 

@@ -109,9 +109,10 @@
 <term_tail> -> <mulop> <factor> <term_tail>
 <term_tail> -> ~
 
-# 乘除运算： * 或 /
+# 乘除运算： * 或 / 或 %
 <mulop> -> *
 <mulop> -> /
+<mulop> -> %
 
 # 因子： ( 表达式 ) 或 变量 或 函数调用 或 常量
 <factor> -> ( <expression> )

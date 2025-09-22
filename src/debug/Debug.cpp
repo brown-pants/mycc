@@ -176,6 +176,9 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             case TACGenerator::Op_div:
             std::cout << code.result << " = " << code.arg1 << " / " << code.arg2 << std::endl;
             break;
+            case TACGenerator::Op_mod:
+            std::cout << code.result << " = " << code.arg1 << " % " << code.arg2 << std::endl;
+            break;
             case TACGenerator::Op_eq_eq:
             std::cout << code.result << " = " << code.arg1 << " == " << code.arg2 << std::endl;
             break;

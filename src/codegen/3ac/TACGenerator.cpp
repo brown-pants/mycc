@@ -406,7 +406,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &factor = term_tail->childs[1];
             term_tail = &term_tail->childs[2];
             std::string temp2 = do_expression(factor);
-            /* <addop> -> * | / */
+            /* <addop> -> * | / | % */
             OpType op;
             if (mulop.tokens[0].type() == Token::Mult)
             {
@@ -415,6 +415,10 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             else if (mulop.tokens[0].type() == Token::Div)
             {
                 op = Op_div;
+            }
+            else if (mulop.tokens[0].type() == Token::Mod)
+            {
+                op = Op_mod;
             }
             std::string temp3 = new_temp();
             code.push_back({ op, temp1, temp2, temp3 });

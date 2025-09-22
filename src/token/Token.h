@@ -19,6 +19,7 @@ public:
         Minus,      //  -
         Mult,       //  *
         Div,        //  /
+        Mod,        //  %
 
         /* bracket */
         OpenParen,  //  (

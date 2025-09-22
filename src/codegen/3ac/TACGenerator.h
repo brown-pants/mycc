@@ -27,6 +27,7 @@ public:
         Op_sub,         // result = arg1 - arg2
         Op_mult,        // result = arg1 * arg2
         Op_div,         // result = arg1 / arg2
+        Op_mod,         // result = arg1 % arg2
         Op_eq_eq,       // result = arg1 == arg2
         Op_not_eq,      // result = arg1 != arg2
         Op_greater,     // result = arg1 > arg2

@@ -11,28 +11,6 @@ mycc_putchar:
 	retq
 
 .text
-mod:
-	pushq %rbp
-	movq %rsp, %rbp
-	subq $32, %rsp
-	movq 16(%rbp), %rax
-	cqto
-	movq $10, %rcx
-	divq %rcx
-	movq %rax, -8(%rbp)
-	movq -8(%rbp), %rax
-	imulq $10, %rax
-	movq %rax, -16(%rbp)
-	movq 16(%rbp), %rax
-	subq -16(%rbp), %rax
-	movq %rax, -24(%rbp)
-	movq -24(%rbp), %rax
-	movq %rax, %rax
-	jmp mod_exit
-mod_exit:
-	leave
-	retq
-.text
 printInt:
 	pushq %rbp
 	movq %rsp, %rbp
@@ -44,18 +22,18 @@ printInt:
 	movq 16(%rbp), %rax
 	cqto
 	movq $10, %rcx
-	divq %rcx
+	idivq %rcx
 	movq %rax, -8(%rbp)
 	pushq -8(%rbp)
 	call printInt
 	addq $8, %rsp
 	movq %rax, %rax
 	movq %rax, -16(%rbp)
-	pushq 16(%rbp)
-	call mod
-	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -24(%rbp)
+	movq 16(%rbp), %rax
+	cqto
+	movq $10, %rcx
+	idivq %rcx
+	movq %rdx, -24(%rbp)
 	movq -24(%rbp), %rax
 	addq $48, %rax
 	movq %rax, -32(%rbp)
