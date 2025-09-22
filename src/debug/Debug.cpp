@@ -103,6 +103,11 @@ void Debug::ParamsError(const Token &token, const std::string &str)
     std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "too " << str << " arguments to function " << red << token.lexeme() << white << std::endl;
 }
 
+void Debug::AssignToArrayType(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "assignment to expression with array "  << red << token.lexeme() << white << std::endl;
+}
+
 void Debug::SetCurrentFile(const std::string &file)
 {
     curFile = file;

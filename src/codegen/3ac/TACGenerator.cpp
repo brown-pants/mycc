@@ -491,6 +491,13 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             /* <id_tail> -> = <expression> */
             else if (id_tail.tokens[0].type() == Token::Eq)
             {
+                // assignment to expression with array type
+                if (id_sym->type == Symbol::Arr)
+                {
+                    Debug::AssignToArrayType(id);
+                    m_hasError = true;
+                    return "";
+                }
                 VarSymbol *val_sym = static_cast<VarSymbol *>(id_sym);
                 const Parser::TreeNode &expression = id_tail.childs[0];
                 std::string temp = do_expression(expression);
@@ -531,9 +538,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
         else
         {
             const Token &num = node.tokens[0];
-            // std::string temp = new_temp();
-            // SymbolTable::GetInstance().insert(temp, ".global", new VarSymbol(num.type(), temp));
-            // code.push_back({ Op_assign, num.lexeme(), "", temp });
             return num.lexeme();
         }
     }

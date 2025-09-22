@@ -21,6 +21,7 @@ public:
     static void NotFunction(const Token &token);
     static void NotNormalVar(const Token &token);
     static void ParamsError(const Token &token, const std::string &str);
+    static void AssignToArrayType(const Token &token);
 
     static void SetCurrentFile(const std::string &file);
 
