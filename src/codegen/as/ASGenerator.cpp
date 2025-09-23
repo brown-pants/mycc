@@ -152,7 +152,7 @@ void ASGenerator::dec_local_var(const std::string &var_name, const std::string &
 
 void ASGenerator::begin_func(const std::string &func_name)
 {
-    asc += ".text\n";        
+    asc += "\t.text\n";        
     asc += func_name + ":\n";               // {func_name}:
     asc += "\tpushq %rbp\n";                //      pushq %rbp
     asc += "\tmovq %rsp, %rbp\n";           //      movq %rsp, %rbp
@@ -434,17 +434,17 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         as_op = "setl";
     }
-    asc += "\t" + mov1 + " " + code1 + ", %rax\n";      //      {movq | movabsq} {arg1}, %rax
-    asc += "\t" + mov2 + " " + code2 + ", %rbx\n";      //      {movq | movabsq} {arg2}, %rbx
-    asc += "\tcmp %rbx, %rax\n";                        //      cmp %rbx, %rax
-    asc += "\t" + as_op + " %cl\n";                     //      {as_op} %cl
-    asc += "\tmovzbq %cl, %rax\n";                      //      movzbq %cl, %rax
-    asc += "\tmovq %rax, " + symTable[result].addr + "\n";   //      movq %rax, {result}
+    asc += "\t" + mov1 + " " + code1 + ", %rax\n";          //      {movq | movabsq} {arg1}, %rax
+    asc += "\t" + mov2 + " " + code2 + ", %rbx\n";          //      {movq | movabsq} {arg2}, %rbx
+    asc += "\tcmp %rbx, %rax\n";                            //      cmp %rbx, %rax
+    asc += "\t" + as_op + " %cl\n";                         //      {as_op} %cl
+    asc += "\tmovzbq %cl, %rax\n";                          //      movzbq %cl, %rax
+    asc += "\tmovq %rax, " + symTable[result].addr + "\n";  //      movq %rax, {result}
 }
 
 void ASGenerator::dec_mycc_putchar()
 {
-    asc +=  ".text\n"
+    asc +=  "\t.text\n"
             "mycc_putchar:\n"
             "\tpushq %rbp\n"
             "\tmovq %rsp, %rbp\n"
@@ -454,13 +454,13 @@ void ASGenerator::dec_mycc_putchar()
             "\tmovq $1, %rdx\n"
             "\tsyscall\n"
             "\tleave\n"
-            "\tretq\n\n";
+            "\tretq\n";
 }
 
 void ASGenerator::dec_start()
 {
-    asc +=  ".global _start\n"
-            ".text\n"
+    asc +=  "\t.global _start\n"
+            "\t.text\n"
             "_start:\n"
             "\tcall main\n"
             "\tmovq $60, %rax\n"
