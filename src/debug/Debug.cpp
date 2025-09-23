@@ -132,10 +132,10 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
         switch(code.op)
         {
             case TACGenerator::Op_global_var:
-            std::cout << "global " << code.result << ", " << code.arg1 << std::endl;
+            std::cout << "global " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;
             case TACGenerator::Op_local_var:
-            std::cout << "local " << code.result << ", " << code.arg1 << std::endl;
+            std::cout << "local " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;
             case TACGenerator::Op_begin_func:
             std::cout << "begin_function " << code.result << std::endl;

@@ -15,10 +15,10 @@ std::string ASGenerator::exec()
         switch(code.op)
         {
         case TACGenerator::Op_global_var:
-            dec_global_var(code.result, code.arg1);
+            dec_global_var(code.result, code.arg1, code.arg2);
             break;
         case TACGenerator::Op_local_var:
-            dec_local_var(code.result, code.arg1);
+            dec_local_var(code.result, code.arg1, code.arg2);
             break;
         case TACGenerator::Op_begin_func:
             begin_func(code.result);
@@ -100,7 +100,7 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         std::string var_name = var.substr(0, found);
         std::string idx = var.substr(found + 1, var.size() - found - 2);
         std::string idx_code;
-        std::string arr_code = addr_map[var_name];
+        std::string arr_code = symTable[var_name].addr;
         std::string mov = "movq";
 
         if (isNumber(idx))
@@ -113,7 +113,7 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         }
         else
         {
-            idx_code = addr_map[idx];
+            idx_code = symTable[idx].addr;
         }
         asc += "\t" + mov + " " + idx_code + ", %rdx\n";        //      {movq | movabsq} {idx_code}, %rdx
         asc += "\tleaq " + arr_code + ", %rcx\n";               //      leaq {arr_code}, %rcx
@@ -124,29 +124,29 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         }
         
         std::string idx_temp = "idx~" + std::to_string(counter ++);
-        dec_local_var(idx_temp, "8");
-        std::string idx_temp_code = addr_map[idx_temp];
+        dec_local_var(idx_temp, "8", "var_int");
+        std::string idx_temp_code = symTable[idx_temp].addr;
         asc += "\tmovq (%rdx, %rcx), %rbx\n";                   //      movq (%rdx, %rcx), %rbx
         asc += "\tmovq %rbx, " + idx_temp_code + "\n";          //      movq %rbx, {idx_temp}
         return idx_temp_code;
     }
     // normal variable
-    return addr_map[var];
+    return symTable[var].addr;
 }
 
-void ASGenerator::dec_global_var(const std::string &var_name, const std::string &size)
+void ASGenerator::dec_global_var(const std::string &var_name, const std::string &size, const std::string &type)
 {
     asc += "\t.global " + var_name + "\n";  //      .global {var_name}
     asc += "\t.bss\n";                      //      .bss
     asc += var_name + ":\n";                // {var_name}:
-    asc += "\t.zero " + size + "\n";       //      .zero {size}
-    addr_map.insert(std::pair<std::string, std::string>(var_name, var_name + "(%rip)"));    // {var_name} : {var_name}(%rip)
+    asc += "\t.zero " + size + "\n";        //      .zero {size}
+    symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
 }
 
-void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size)
+void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size, const std::string &type)
 {
     mOffset -= std::stoll(size);
-    addr_map.insert(std::pair<std::string, std::string>(var_name, std::to_string(mOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
+    symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(std::to_string(mOffset) + "(%rbp)", type)));    // {var_name} : {mOffset}(%rbp)
     localVar_set.insert(var_name);
 }
 
@@ -167,7 +167,7 @@ void ASGenerator::end_func(const std::string &func_name)
     // clear
     for (const std::string &localVar : localVar_set)
     {
-        addr_map.erase(localVar);
+        symTable.erase(localVar);
     }
     localVar_set.clear();
     mOffset = 0;
@@ -177,7 +177,7 @@ void ASGenerator::end_func(const std::string &func_name)
 void ASGenerator::dec_param(const std::string &param_name)
 {
     paramOffset += 8;
-    addr_map.insert(std::pair<std::string, std::string>(param_name, std::to_string(paramOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
+    symTable.insert(std::pair<std::string, VarSymbol>(param_name, VarSymbol(std::to_string(paramOffset) + "(%rbp)", "var_int")));    // {var_name} : {mOffset}(%rbp)
     localVar_set.insert(param_name);
 }
 
@@ -235,9 +235,9 @@ void ASGenerator::if_goto(const std::string &condition, const std::string &label
 void ASGenerator::assign(const std::string &arg, const std::string &result)
 {
     // result is undefined temp
-    if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
+    if (result.find('[') == std::string::npos && symTable.find(result) == symTable.end())
     {
-        dec_local_var(result, "8");
+        dec_local_var(result, "8", "var_int");
     }
     // arg is a number
     if (isNumber(arg))
@@ -274,9 +274,9 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     long long num1;
     long long num2;
     // undefined temp
-    if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
+    if (result.find('[') == std::string::npos && symTable.find(result) == symTable.end())
     {
-        dec_local_var(result, "8");
+        dec_local_var(result, "8", "var_int");
     }
     // arg1 is a number
     if (isNumber(arg1))
@@ -366,9 +366,9 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     long long num1;
     long long num2;
     // undefined temp
-    if (result.find('[') == std::string::npos && addr_map.find(result) == addr_map.end())
+    if (result.find('[') == std::string::npos && symTable.find(result) == symTable.end())
     {
-        dec_local_var(result, "8");
+        dec_local_var(result, "8", "var_int");
     }
     // arg1 is a number
     if (isNumber(arg1))
@@ -439,7 +439,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     asc += "\tcmp %rbx, %rax\n";                        //      cmp %rbx, %rax
     asc += "\t" + as_op + " %cl\n";                     //      {as_op} %cl
     asc += "\tmovzbq %cl, %rax\n";                      //      movzbq %cl, %rax
-    asc += "\tmovq %rax, " + addr_map[result] + "\n";   //      movq %rax, {result}
+    asc += "\tmovq %rax, " + symTable[result].addr + "\n";   //      movq %rax, {result}
 }
 
 void ASGenerator::dec_mycc_putchar()
@@ -460,6 +460,7 @@ void ASGenerator::dec_mycc_putchar()
 void ASGenerator::dec_start()
 {
     asc +=  ".global _start\n"
+            ".text\n"
             "_start:\n"
             "\tcall main\n"
             "\tmovq $60, %rax\n"

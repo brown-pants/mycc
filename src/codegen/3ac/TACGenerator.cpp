@@ -243,15 +243,16 @@ void TACGenerator::dec_var(bool local, const Token &type, const Token &id, bool 
             const std::string &suffix = scopeStack.top();
             newName += "~" + suffix.substr(suffix.find('~') + 1);
         }
+        std::string data_type = (type.type() == Token::DT_int ? "int" : "char");
         if (!isArray)
         {
             SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new VarSymbol(type.type(), newName));
-            code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()]), "", newName });
+            code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()]), "arr_" + data_type, newName });
         }
         else
         {
             SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new ArrSymbol(type.type(), arrSize, newName));
-            code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()] * arrSize), "", newName });
+            code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()] * arrSize), "var_" + data_type, newName });
         }
     }
 }

@@ -12,8 +12,8 @@ class TACGenerator
 public:
     enum OpType
     {
-        Op_global_var,  // define a global variable : arg1 = size, result = varName
-        Op_local_var,   // define a local variable : arg1 = size, result = varName
+        Op_global_var,  // define a global variable : arg1 = size, arg2 = type, result = varName
+        Op_local_var,   // define a local variable : arg1 = size, arg2 = type, result = varName
         Op_begin_func,  // begin of function : result = funcName
         Op_end_func,    // end of function : result = funcName
         Op_dec_param,   // define a param : result = paramName

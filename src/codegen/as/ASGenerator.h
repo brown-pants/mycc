@@ -11,17 +11,26 @@ public:
     std::string exec();
 
 private:
+    struct VarSymbol
+    {
+        VarSymbol() {}
+        VarSymbol(const std::string &addr, const std::string &type)
+            : addr(addr), type(type) {}
+        std::string addr;
+        std::string type;
+    };
     const std::vector<TACGenerator::Quaternion> &tac;
     std::unordered_set<std::string> localVar_set;
-    std::unordered_map<std::string, std::string> addr_map;
+    std::unordered_map<std::string, VarSymbol> symTable;
     std::string asc;
+    
     int mOffset;
     int paramOffset;
     int sub_rsp_pos;
 
     std::string getVarCode(const std::string &var, bool isWrite = false);
-    void dec_global_var(const std::string &var_name, const std::string &size);
-    void dec_local_var(const std::string &var_name, const std::string &size);
+    void dec_global_var(const std::string &var_name, const std::string &size, const std::string &type);
+    void dec_local_var(const std::string &var_name, const std::string &size, const std::string &type);
     void begin_func(const std::string &func_name);
     void end_func(const std::string &func_name);
     void dec_param(const std::string &param_name);
