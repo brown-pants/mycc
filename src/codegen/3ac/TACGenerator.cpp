@@ -637,6 +637,10 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
         else
         {
             const Token &num = node.tokens[0];
+            if (num.lexeme()[0] == '\'')
+            {
+                return std::to_string(num.lexeme()[1]);
+            }
             return num.lexeme();
         }
     }

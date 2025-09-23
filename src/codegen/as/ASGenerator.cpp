@@ -183,8 +183,8 @@ void ASGenerator::dec_param(const std::string &param_name)
 
 void ASGenerator::param(const std::string &param_name)
 {
-    // param_name is a interage or a character
-    if (isNumber(param_name) || param_name[0] == '\'')
+    // param_name is a number
+    if (isNumber(param_name))
     {
         // out of int32 range
         if (isNumber(param_name) && isOutOfInt32Range(std::stoll(param_name)))
@@ -194,7 +194,7 @@ void ASGenerator::param(const std::string &param_name)
         }
         else
         {
-            asc += "\tpushq $" + param_name + "\n";             //      pushq ${interage | character}
+            asc += "\tpushq $" + param_name + "\n";             //      pushq ${int32}
         }
     }
     // param_name is a variable
@@ -216,18 +216,10 @@ void ASGenerator::goto_label(const std::string &label_name)
 
 void ASGenerator::if_goto(const std::string &condition, const std::string &label)
 {
-    // condition is a interage
+    // condition is a number
     if (isNumber(condition))
     {
         if (std::stoll(condition))
-        {
-            goto_label(label);
-        }
-    }
-    //condition is a character
-    else if (condition[0] == '\'')
-    {
-        if (condition[1])
         {
             goto_label(label);
         }
@@ -247,8 +239,8 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     {
         dec_local_var(result, "8");
     }
-    // arg is a interage or a character
-    if (isNumber(arg) || arg[0] == '\'')
+    // arg is a number
+    if (isNumber(arg))
     {
         // out of int32 range
         if (isNumber(arg) && isOutOfInt32Range(std::stoll(arg)))
@@ -258,7 +250,7 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
         }
         else 
         {
-            asc += "\tmovq $" + arg + ", " + getVarCode(result, true) + "\n";   //      movq ${interage | character}, {result}
+            asc += "\tmovq $" + arg + ", " + getVarCode(result, true) + "\n";   //      movq ${int32}, {result}
         }
     }
     // arg is a variable
@@ -286,28 +278,16 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     {
         dec_local_var(result, "8");
     }
-    // arg1 is a interage
+    // arg1 is a number
     if (isNumber(arg1))
     {
         num1 = std::stoll(arg1);
         sign1 = true;
     }
-    // arg1 is a character
-    else if (arg1[0] == '\'')
-    {
-        num1 = arg1[1];
-        sign1 = true;
-    }
-    // arg2 is a interage
+    // arg2 is a number
     if (isNumber(arg2))
     {
         num2 = std::stoll(arg2);
-        sign2 = true;
-    }
-    // arg2 is a character
-    else if (arg2[0] == '\'')
-    {
-        num2 = arg2[1];
         sign2 = true;
     }
     // At least one of arg1 and arg2 is not number
@@ -390,28 +370,16 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         dec_local_var(result, "8");
     }
-    // arg1 is a interage
+    // arg1 is a number
     if (isNumber(arg1))
     {
         num1 = std::stoll(arg1);
         sign1 = true;
     }
-    // arg1 is a character
-    else if (arg1[0] == '\'')
-    {
-        num1 = arg1[1];
-        sign1 = true;
-    }
-    // arg2 is a interage
+    // arg2 is a number
     if (isNumber(arg2))
     {
         num2 = std::stoll(arg2);
-        sign2 = true;
-    }
-    // arg2 is a character
-    else if (arg2[0] == '\'')
-    {
-        num2 = arg2[1];
         sign2 = true;
     }
     // At least one of arg1 and arg2 is not number
