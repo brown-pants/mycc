@@ -27,7 +27,7 @@ std::string ASGenerator::exec()
             end_func(code.result);
             break;
         case TACGenerator::Op_dec_param:
-            dec_param(code.result, code.arg1);
+            dec_param(code.result);
             break;
         case TACGenerator::Op_param:
             param(code.result);
@@ -99,7 +99,7 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         static int counter = 0;
         std::string var_name = var.substr(0, found);
         std::string idx = var.substr(found + 1, var.size() - found - 2);
-        std::string idx_code = addr_map[idx];
+        std::string idx_code = (isNumber(idx) ? "$" + idx : addr_map[idx]);
         std::string arr_code = addr_map[var_name];
         asc += "\tmovq " + idx_code + ", %rdx\n";               //      movq {idx_code}, %rdx
         asc += "\tleaq " + arr_code + ", %rcx\n";               //      leaq {arr_code}, %rcx
@@ -158,7 +158,7 @@ void ASGenerator::end_func(const std::string &func_name)
     paramOffset = 8;
 }
 
-void ASGenerator::dec_param(const std::string &param_name, const std::string &size)
+void ASGenerator::dec_param(const std::string &param_name)
 {
     paramOffset += 8;
     addr_map.insert(std::pair<std::string, std::string>(param_name, std::to_string(paramOffset) + "(%rbp)"));    // {var_name} : {mOffset}(%rbp)
@@ -168,10 +168,10 @@ void ASGenerator::dec_param(const std::string &param_name, const std::string &si
 void ASGenerator::param(const std::string &param_name)
 {
     // param_name is a interage or a character
-    if (std::isdigit(param_name[0]) || param_name[0] == '\'')
+    if (isNumber(param_name) || param_name[0] == '\'')
     {
         // out of int32 range
-        if (std::isdigit(param_name[0]) && isOutOfInt32Range(std::stoll(param_name)))
+        if (isNumber(param_name) && isOutOfInt32Range(std::stoll(param_name)))
         {
             asc += "\tmovabsq $" + param_name + ", %rax\n";     //      movabsq ${int64}, %rax
             asc += "\tpushq %rax\n";                            //      pushq %rax
@@ -201,7 +201,7 @@ void ASGenerator::goto_label(const std::string &label_name)
 void ASGenerator::if_goto(const std::string &condition, const std::string &label)
 {
     // condition is a interage
-    if (std::isdigit(condition[0]))
+    if (isNumber(condition))
     {
         if (std::stoll(condition))
         {
@@ -232,10 +232,10 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
         dec_local_var(result, "8");
     }
     // arg is a interage or a character
-    if (std::isdigit(arg[0]) || arg[0] == '\'')
+    if (isNumber(arg) || arg[0] == '\'')
     {
         // out of int32 range
-        if (std::isdigit(arg[0]) && isOutOfInt32Range(std::stoll(arg)))
+        if (isNumber(arg) && isOutOfInt32Range(std::stoll(arg)))
         {
             asc += "\tmovabsq $" + arg + ", %rax\n";                            //      movabsq ${int64}, %rax
             asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";           //      movq %rax, {result}
@@ -271,7 +271,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         dec_local_var(result, "8");
     }
     // arg1 is a interage
-    if (std::isdigit(arg1[0]))
+    if (isNumber(arg1))
     {
         num1 = std::stoll(arg1);
         sign1 = true;
@@ -283,7 +283,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         sign1 = true;
     }
     // arg2 is a interage
-    if (std::isdigit(arg2[0]))
+    if (isNumber(arg2))
     {
         num2 = std::stoll(arg2);
         sign2 = true;
@@ -293,41 +293,6 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     {
         num2 = arg2[1];
         sign2 = true;
-    }
-    // Both of arg1 and arg2 is number
-    if (sign1 && sign2)
-    {
-        long long num;
-        if (op == "+")
-        {
-            num = num1 + num2;
-        }
-        else if (op == "-")
-        {
-            num = num1 - num2;
-        }
-        else if (op == "*")
-        {
-            num = num1 * num2;
-        }
-        else if (op == "/")
-        {
-            num = num1 / num2;
-        }
-        else if (op == "%")
-        {
-            num = num1 % num2;
-        }
-        if (isOutOfInt32Range(num))
-        {
-            asc += "\tmovabsq $" + std::to_string(num) + ", %rax\n";    //      movabsq ${num}, %rax
-            asc += "\tmovq %rax, " + getVarCode(result) + "\n";         //      movq %rax, {result}
-        }
-        else
-        {
-            asc += "\tmovq $" + std::to_string(num) + ", " + getVarCode(result) + "\n";    //      movq ${num}, {result}
-        }
-        return;
     }
     // At least one of arg1 and arg2 is not number
     std::string code1, code2, result_code;
@@ -410,7 +375,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
         dec_local_var(result, "8");
     }
     // arg1 is a interage
-    if (std::isdigit(arg1[0]))
+    if (isNumber(arg1))
     {
         num1 = std::stoll(arg1);
         sign1 = true;
@@ -422,7 +387,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
         sign1 = true;
     }
     // arg2 is a interage
-    if (std::isdigit(arg2[0]))
+    if (isNumber(arg2))
     {
         num2 = std::stoll(arg2);
         sign2 = true;
@@ -432,37 +397,6 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         num2 = arg2[1];
         sign2 = true;
-    }
-    // Both of arg1 and arg2 is number
-    if (sign1 && sign2)
-    {
-        int condition;
-        if (op == "==")
-        {
-            condition = num1 == num2;
-        }
-        else if (op == "!=")
-        {
-            condition = num1 != num2;
-        }
-        else if (op == ">=")
-        {
-            condition = num1 >= num2;
-        }
-        else if (op == ">")
-        {
-            condition = num1 > num2;
-        }
-        else if (op == "<=")
-        {
-            condition = num1 <= num2;
-        }
-        else if (op == "<")
-        {
-            condition = num1 < num2;
-        }
-        asc += "\tmovq $" + std::to_string(condition) + ", " + getVarCode(result) + "\n";    //      movq ${condition}, {result}
-        return;
     }
     // At least one of arg1 and arg2 is not number
     std::string code1, code2, result_code;
@@ -553,4 +487,9 @@ bool ASGenerator::isOutOfInt32Range(int64_t number) const
 {
     return number < std::numeric_limits<int32_t>::min() || 
            number > std::numeric_limits<int32_t>::max();
+}
+
+bool ASGenerator::isNumber(const std::string &str) const
+{
+    return str[0] == '-' || std::isdigit(str[0]);
 }

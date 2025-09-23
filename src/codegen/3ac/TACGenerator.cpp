@@ -302,7 +302,7 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
         {
             std::string newName = varName + "~" + std::to_string(scope_counter);
             SymbolTable::GetInstance().insert(varName, scopeStack.top(), new VarSymbol(type.type(), newName));
-            code.push_back({ Op_dec_param, std::to_string(dataSizeMap[type.type()]), "", newName });
+            code.push_back({ Op_dec_param, "", "", newName });
             params_type.push_back(type.type());
         }
     }
@@ -333,6 +333,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &additive_expression = expression_tail.childs[1];
             std::string temp2 = do_expression(additive_expression);
             std::string temp3 = new_temp();
+
             /* <relop> -> <= | < | > | >= | == | != */
             OpType op;
             if (relop.tokens[0].type() == Token::Less_Eq)
@@ -359,7 +360,43 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 op = Op_not_eq;
             }
-            code.push_back({ op, temp1, temp2, temp3 });
+
+            // Both of arg1 and arg2 is number
+            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            {
+                int condition;
+                long long num1 = std::stoll(temp1);
+                long long num2 = std::stoll(temp2);
+                if (op == Op_eq_eq)
+                {
+                    condition = num1 == num2;
+                }
+                else if (op == Op_not_eq)
+                {
+                    condition = num1 != num2;
+                }
+                else if (op == Op_greater_eq)
+                {
+                    condition = num1 >= num2;
+                }
+                else if (op == Op_greater)
+                {
+                    condition = num1 > num2;
+                }
+                else if (op == Op_less_eq)
+                {
+                    condition = num1 <= num2;
+                }
+                else if (op == Op_less)
+                {
+                    condition = num1 < num2;
+                }
+                code.push_back({ Op_assign, std::to_string(condition), "", temp3 });
+            }
+            else
+            {
+                code.push_back({ op, temp1, temp2, temp3 });
+            }
             return temp3;
         }
         return temp1;
@@ -377,6 +414,8 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &term = additive_expression_tail->childs[1];
             additive_expression_tail = &additive_expression_tail->childs[2];
             std::string temp2 = do_expression(term);
+            std::string temp3 = new_temp();
+
             /* <addop> -> + | - */
             OpType op;
             if (addop.tokens[0].type() == Token::Plus)
@@ -387,8 +426,27 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 op = Op_sub;
             }
-            std::string temp3 = new_temp();
-            code.push_back({ op, temp1, temp2, temp3 });
+
+            // Both of arg1 and arg2 is number
+            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            {
+                long long num;
+                long long num1 = std::stoll(temp1);
+                long long num2 = std::stoll(temp2);
+                if (op == Op_add)
+                {
+                    num = num1 + num2;
+                }
+                else if (op == Op_sub)
+                {
+                    num = num1 - num2;
+                }
+                code.push_back({ Op_assign, std::to_string(num), "", temp3 });
+            }
+            else
+            {
+                code.push_back({ op, temp1, temp2, temp3 });
+            }
             temp1 = temp3;
         }
         return temp1;
@@ -406,6 +464,8 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &factor = term_tail->childs[1];
             term_tail = &term_tail->childs[2];
             std::string temp2 = do_expression(factor);
+            std::string temp3 = new_temp();
+
             /* <addop> -> * | / | % */
             OpType op;
             if (mulop.tokens[0].type() == Token::Mult)
@@ -420,8 +480,31 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 op = Op_mod;
             }
-            std::string temp3 = new_temp();
-            code.push_back({ op, temp1, temp2, temp3 });
+
+            // Both of arg1 and arg2 is number
+            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            {
+                long long num;
+                long long num1 = std::stoll(temp1);
+                long long num2 = std::stoll(temp2);
+                if (op == Op_mult)
+                {
+                    num = num1 * num2;
+                }
+                else if (op == Op_div)
+                {
+                    num = num1 / num2;
+                }
+                else if (op == Op_mod)
+                {
+                    num = num1 % num2;
+                }
+                code.push_back({ Op_assign, std::to_string(num), "", temp3 });
+            }
+            else
+            {
+                code.push_back({ op, temp1, temp2, temp3 });
+            }
             temp1 = temp3;
         }
         return temp1;
@@ -475,9 +558,21 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 const Parser::TreeNode &expression = arr_idx.childs[0];
                 const Parser::TreeNode &arr_idx_tail = arr_idx.childs[1];
                 std::string idx = do_expression(expression);
-                std::string temp = new_temp();
-                code.push_back({ Op_mult, idx, std::to_string(dataSizeMap[arr_sym->data_type]), temp });
-                std::string arr_str = arr_sym->newName + '[' + temp + ']';
+                std::string arr_str;
+
+                // idx is a num
+                if (std::isdigit(idx[0]))
+                {
+                    arr_str = arr_sym->newName + '[' + idx + ']';
+                }
+                // idx is a var
+                else
+                {
+                    std::string temp = new_temp();
+                    code.push_back({ Op_mult, idx, std::to_string(dataSizeMap[arr_sym->data_type]), temp });
+                    arr_str = arr_sym->newName + '[' + temp + ']';
+                }
+                
                 /* <arr_idx_tail> -> ~ */
                 if (arr_idx_tail.childs.empty())
                 {
