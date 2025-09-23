@@ -99,14 +99,30 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         static int counter = 0;
         std::string var_name = var.substr(0, found);
         std::string idx = var.substr(found + 1, var.size() - found - 2);
-        std::string idx_code = (isNumber(idx) ? "$" + idx : addr_map[idx]);
+        std::string idx_code;
         std::string arr_code = addr_map[var_name];
-        asc += "\tmovq " + idx_code + ", %rdx\n";               //      movq {idx_code}, %rdx
+        std::string mov = "movq";
+
+        if (isNumber(idx))
+        {
+            idx_code = "$" + idx;
+            if (isOutOfInt32Range(std::stoll(idx)))
+            {
+                mov = "movabsq";
+            }
+        }
+        else
+        {
+            idx_code = addr_map[idx];
+        }
+        asc += "\t" + mov + " " + idx_code + ", %rdx\n";        //      {movq | movabsq} {idx_code}, %rdx
         asc += "\tleaq " + arr_code + ", %rcx\n";               //      leaq {arr_code}, %rcx
+        
         if (isWrite)
         {
             return "(%rdx, %rcx)";
         }
+        
         std::string idx_temp = "idx~" + std::to_string(counter ++);
         dec_local_var(idx_temp, "8");
         std::string idx_temp_code = addr_map[idx_temp];
