@@ -332,7 +332,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &relop = expression_tail.childs[0];
             const Parser::TreeNode &additive_expression = expression_tail.childs[1];
             std::string temp2 = do_expression(additive_expression);
-            std::string temp3 = new_temp();
 
             /* <relop> -> <= | < | > | >= | == | != */
             OpType op;
@@ -362,7 +361,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             }
 
             // Both of arg1 and arg2 is number
-            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            if (isNumber(temp1) && isNumber(temp2))
             {
                 int condition;
                 long long num1 = std::stoll(temp1);
@@ -391,13 +390,14 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 {
                     condition = num1 < num2;
                 }
-                code.push_back({ Op_assign, std::to_string(condition), "", temp3 });
+                return std::to_string(condition);
             }
             else
             {
+                std::string temp3 = new_temp();
                 code.push_back({ op, temp1, temp2, temp3 });
+                return temp3;
             }
-            return temp3;
         }
         return temp1;
     }
@@ -414,7 +414,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &term = additive_expression_tail->childs[1];
             additive_expression_tail = &additive_expression_tail->childs[2];
             std::string temp2 = do_expression(term);
-            std::string temp3 = new_temp();
 
             /* <addop> -> + | - */
             OpType op;
@@ -428,7 +427,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             }
 
             // Both of arg1 and arg2 is number
-            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            if (isNumber(temp1) && isNumber(temp2))
             {
                 long long num;
                 long long num1 = std::stoll(temp1);
@@ -441,13 +440,14 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 {
                     num = num1 - num2;
                 }
-                code.push_back({ Op_assign, std::to_string(num), "", temp3 });
+                temp1 = std::to_string(num);
             }
             else
             {
+                std::string temp3 = new_temp();
                 code.push_back({ op, temp1, temp2, temp3 });
+                temp1 = temp3;
             }
-            temp1 = temp3;
         }
         return temp1;
     }
@@ -464,7 +464,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &factor = term_tail->childs[1];
             term_tail = &term_tail->childs[2];
             std::string temp2 = do_expression(factor);
-            std::string temp3 = new_temp();
 
             /* <addop> -> * | / | % */
             OpType op;
@@ -482,7 +481,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             }
 
             // Both of arg1 and arg2 is number
-            if (std::isdigit(temp1[0]) && std::isdigit(temp2[0]))
+            if (isNumber(temp1) && isNumber(temp2))
             {
                 long long num;
                 long long num1 = std::stoll(temp1);
@@ -499,13 +498,14 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 {
                     num = num1 % num2;
                 }
-                code.push_back({ Op_assign, std::to_string(num), "", temp3 });
+                temp1 = std::to_string(num);
             }
             else
             {
+                std::string temp3 = new_temp();
                 code.push_back({ op, temp1, temp2, temp3 });
+                temp1 = temp3;
             }
-            temp1 = temp3;
         }
         return temp1;
     }
@@ -561,7 +561,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 std::string arr_str;
 
                 // idx is a num
-                if (std::isdigit(idx[0]))
+                if (isNumber(idx))
                 {
                     arr_str = arr_sym->newName + '[' + idx + ']';
                 }
@@ -657,4 +657,9 @@ int TACGenerator::pasing_params(const Parser::TreeNode &node)
         return 1 + cnt;
     }
     return 0;
+}
+
+bool TACGenerator::isNumber(const std::string &str) const
+{
+    return str[0] == '-' || std::isdigit(str[0]);
 }

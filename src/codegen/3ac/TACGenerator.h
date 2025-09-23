@@ -71,6 +71,8 @@ private:
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type);
     std::string do_expression(const Parser::TreeNode &node);
     int pasing_params(const Parser::TreeNode &node);
+    
+    bool isNumber(const std::string &str) const;
 };
 
 #endif
