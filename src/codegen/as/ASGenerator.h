@@ -33,7 +33,7 @@ private:
     void dec_local_var(const std::string &var_name, const std::string &size, const std::string &type);
     void begin_func(const std::string &func_name);
     void end_func(const std::string &func_name);
-    void dec_param(const std::string &param_name);
+    void dec_param(const std::string &param_name, const std::string &type);
     void param(const std::string &param_name);
     void label(const std::string &label_name);
     void goto_label(const std::string &label_name);
@@ -48,6 +48,8 @@ private:
 
     bool isOutOfInt32Range(int64_t number) const;
     bool isNumber(const std::string &str) const;
+    std::string getVarName(const std::string &str) const;
+    bool isOneByteType(const std::string &type) const;
 };
 
 #endif

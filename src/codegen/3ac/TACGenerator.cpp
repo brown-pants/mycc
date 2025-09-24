@@ -303,7 +303,16 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
         {
             std::string newName = varName + "~" + std::to_string(scope_counter);
             SymbolTable::GetInstance().insert(varName, scopeStack.top(), new VarSymbol(type.type(), newName));
-            code.push_back({ Op_dec_param, "", "", newName });
+            std::string data_type;
+            if (type.type() == Token::DT_char)
+            {
+                data_type = "char";
+            }
+            else
+            {
+                data_type = "int";
+            }
+            code.push_back({ Op_dec_param, "var_" + data_type, "", newName });
             params_type.push_back(type.type());
         }
     }
@@ -564,7 +573,8 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 // idx is a num
                 if (isNumber(idx))
                 {
-                    arr_str = arr_sym->newName + '[' + idx + ']';
+                    long long offset = std::stoll(idx) * dataSizeMap[arr_sym->data_type];
+                    arr_str = arr_sym->newName + '[' + std::to_string(offset) + ']';
                 }
                 // idx is a var
                 else

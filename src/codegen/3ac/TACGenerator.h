@@ -16,7 +16,7 @@ public:
         Op_local_var,   // define a local variable : arg1 = size, arg2 = type, result = varName
         Op_begin_func,  // begin of function : result = funcName
         Op_end_func,    // end of function : result = funcName
-        Op_dec_param,   // define a param : result = paramName
+        Op_dec_param,   // define a param : result = paramName, arg1 = type
         Op_param,       // pasing parameters : param result
         Op_label,       // result = label_name
         Op_goto,        // goto result
