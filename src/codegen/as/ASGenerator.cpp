@@ -45,7 +45,7 @@ std::string ASGenerator::exec()
             assign(code.arg1, code.result);
             break;
         case TACGenerator::Op_call_func:
-            call_func(code.arg1, code.result);
+            call_func(code.arg1, code.arg2, code.result);
             break;
         case TACGenerator::Op_add:
             arithmetic("+", code.arg1, code.arg2, code.result);
@@ -92,11 +92,39 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
     {
         return "%rax";
     }
+    if (var[0] == '*')
+    {
+        std::string var_name = var.substr(1);
+        std::string addr = symTable[var_name].addr;
+        asc += "\tmovq " + addr + ", %rbx\n";  // movq {addr}, %rbx
+        if (isWrite)
+        {
+            return "(%rbx)";
+        }
+        static int counter = 0;
+        std::string ref_temp = "ref~" + std::to_string(counter ++);
+        dec_local_var(ref_temp, isOneByteType(var) ? "1" : "8", getSymbolType(var));
+        std::string ref_temp_code = symTable[ref_temp].addr;
+        asc += "\tmovq (%rbx), %rbx\n";                 // movq (%rbx), %rbx
+        asc += "\tmovq %rbx, " + ref_temp_code + "\n";  // movq %rbx, {ref_temp_code}
+        return ref_temp_code;
+    }
+    if (var[0] == '&')
+    {
+        std::string var_name = var.substr(1);
+        std::string addr = symTable[var_name].addr;
+        static int counter = 0;
+        std::string ptr_temp = "ptr~" + std::to_string(counter ++);
+        dec_local_var(ptr_temp, "8", getSymbolType(var));
+        std::string ptr_temp_code = symTable[ptr_temp].addr;
+        asc += "\tleaq " + addr + ", %rax\n";           // leaq {addr}, %rax
+        asc += "\tmovq %rax, " + ptr_temp_code + "\n";  // movq %rax, {ptr_temp_code}
+        return ptr_temp_code;
+    }
     size_t found = var.find('[');
     // array
     if (found != std::string::npos)
     {
-        static int counter = 0;
         std::string var_name = var.substr(0, found);
         std::string idx = var.substr(found + 1, var.size() - found - 2);
         std::string idx_code;
@@ -116,17 +144,18 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
             idx_code = symTable[idx].addr;
         }
         asc += "\t" + mov + " " + idx_code + ", %rdx\n";        //      {movq | movabsq} {idx_code}, %rdx
-        std::string addr = arr_code.insert(arr_code.length() - 1, ", %rdx");
+        asc += "\tleaq " + arr_code + ", %rbx\n";               //      leaq {arr_code}, %rbx
         
         if (isWrite)
         {
-            return addr;
+            return "(%rbx, %rdx)";
         }
         
+        static int counter = 0;
         std::string idx_temp = "idx~" + std::to_string(counter ++);
-        dec_local_var(idx_temp, "8", "var_int");
+        dec_local_var(idx_temp, "8", getSymbolType(var));
         std::string idx_temp_code = symTable[idx_temp].addr;
-        asc += "\tmovq " + addr + ", %rbx\n";                   //      movq {addr}, %rbx
+        asc += "\tmovq (%rbx, %rdx), %rbx\n";                   //      movq {addr}, %rbx
         asc += "\tmovq %rbx, " + idx_temp_code + "\n";          //      movq %rbx, {idx_temp}
         return idx_temp_code;
     }
@@ -183,7 +212,7 @@ void ASGenerator::dec_param(const std::string &param_name, const std::string &ty
 
 void ASGenerator::param(const std::string &param_name)
 {
-    bool paramOneByte = isOneByteType(symTable[getVarName(param_name)].type);
+    bool paramOneByte = isOneByteType(param_name);
     // param_name is a number
     if (isNumber(param_name))
     {
@@ -202,7 +231,7 @@ void ASGenerator::param(const std::string &param_name)
     else if (paramOneByte)
     {
         asc += "\tmovsbq " + getVarCode(param_name) + ", %rax\n";   //      movsbq {addr}, %rax
-        asc += "\tpush %rax\n";                                     //      pushq %rax
+        asc += "\tpushq %rax\n";                                     //      pushq %rax
     }
     // param_name is a eight bytes variable
     else
@@ -244,9 +273,18 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     // result is undefined temp
     if (result.substr(0, 2) == "t^")
     {
-        dec_local_var(result, "8", "var_int");
+        std::string argType = getSymbolType(arg);
+        std::string argPrefix = argType.substr(0, argType.find('_'));
+        if (argPrefix == "ptr")
+        {
+            dec_local_var(result, "8", argType);
+        }
+        else
+        {
+            dec_local_var(result, "8", "var_int");
+        }
     }
-    bool resultOneByte = isOneByteType(symTable[getVarName(result)].type);
+    bool resultOneByte = isOneByteType(result);
     // arg is a number
     if (isNumber(arg))
     {
@@ -276,7 +314,7 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     // arg is a variable
     else
     {
-        bool argOneByte = isOneByteType(symTable[getVarName(arg)].type);
+        bool argOneByte = isOneByteType(arg);
         if (argOneByte)
         {
             asc += "\tmovsbq " + getVarCode(arg) + ", %rax\n";                  //      movsbq {arg}, %rax
@@ -296,10 +334,11 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     }
 }
 
-void ASGenerator::call_func(const std::string &params_count, const std::string &func_name)
+void ASGenerator::call_func(const std::string &params_count, const std::string &return_type, const std::string &func_name)
 {
     asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
     asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
+    ret_type = return_type;
 }
 
 void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
@@ -311,7 +350,24 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // undefined temp
     if (result.substr(0, 2) == "t^")
     {
-        dec_local_var(result, "8", "var_int");
+        std::string arg1Type = getSymbolType(arg1);
+        std::string arg2Type = getSymbolType(arg2);
+        std::string arg1Prefix = arg1Type.substr(0, arg1Type.find('_'));
+        std::string arg2Prefix = arg2Type.substr(0, arg2Type.find('_'));
+        // arg1 is pointer
+        if (arg1Prefix == "ptr")
+        {
+            dec_local_var(result, "8", arg1Type);
+        }
+        // arg2 is pointer
+        else if (arg2Prefix == "ptr")
+        {
+            dec_local_var(result, "8", arg2Type);
+        }
+        else
+        {
+            dec_local_var(result, "8", "var_int");
+        }
     }
     // arg1 is a number
     if (isNumber(arg1))
@@ -329,9 +385,9 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     std::string code1, code2, result_code;
     std::string mov1 = "movq", mov2 = "movq";
 
-    bool resultOneByte = isOneByteType(symTable[getVarName(result)].type);
-    bool arg1OneByte = isOneByteType(symTable[getVarName(arg1)].type);
-    bool arg2OneByte = isOneByteType(symTable[getVarName(arg2)].type);
+    bool resultOneByte = isOneByteType(result);
+    bool arg1OneByte = isOneByteType(arg1);
+    bool arg2OneByte = isOneByteType(arg2);
 
     if (sign1)
     {
@@ -384,11 +440,11 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // idivq
     if (op == "/" || op == "%")
     {
-        result_code = getVarCode(result);
         asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq | movsbq} {arg1}, %rax
         asc += "\tcqto\n";                                              //      cqto
         asc += "\t" + mov2 + " " + code2 + ", %rcx\n";                  //      {movq | movabsq | movsbq} {arg2}, %rcx
         asc += "\tidivq %rcx\n";                                        //      idivq %rcx
+        result_code = getVarCode(result, true);
         // quotient
         if(op == "/")
         {
@@ -417,7 +473,6 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // addq, subq, imulq
     else
     {
-        result_code = getVarCode(result);
         asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq | movsbq} {arg1}, %rax
         if (arg2OneByte)
         {
@@ -428,6 +483,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         {
             asc += "\t" + as_op + " " + code2 + ", %rax\n";             //      {as_op} {arg2}, %rax
         }
+        result_code = getVarCode(result, true);
         if (resultOneByte)
         {
             asc += "\tmovb %al, " + result_code + "\n";                 //      movb %al, {result}
@@ -466,9 +522,9 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     std::string code1, code2, result_code;
     std::string mov1 = "movq", mov2 = "movq";
 
-    bool resultOneByte = isOneByteType(symTable[getVarName(result)].type);
-    bool arg1OneByte = isOneByteType(symTable[getVarName(arg1)].type);
-    bool arg2OneByte = isOneByteType(symTable[getVarName(arg2)].type);
+    bool resultOneByte = isOneByteType(result);
+    bool arg1OneByte = isOneByteType(arg1);
+    bool arg2OneByte = isOneByteType(arg2);
 
     if (sign1)
     {
@@ -535,11 +591,11 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     asc += "\tmovzbq %cl, %rax\n";                              //      movzbq %cl, %rax
     if (resultOneByte)
     {
-        asc += "\tmovb %al, " + symTable[result].addr + "\n";   //      movb %al, {result}
+        asc += "\tmovb %al, " + getVarCode(result, true) + "\n";   //      movb %al, {result}
     }
     else
     {
-        asc += "\tmovq %rax, " + symTable[result].addr + "\n";  //      movq %rax, {result}
+        asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";  //      movq %rax, {result}
     }
 }
 
@@ -580,20 +636,62 @@ bool ASGenerator::isNumber(const std::string &str) const
     return str[0] == '-' || std::isdigit(str[0]);
 }
 
-std::string ASGenerator::getVarName(const std::string &str) const
+bool ASGenerator::isOneByteType(const std::string &str) const
 {
+    if (isNumber(str))
+    {
+        return false;
+    }
+    if (str == "~ret")
+    {
+        return ret_type == "var_char";
+    }
+    if (str[0] == '&')
+    {
+        return false;
+    }
+    if (str[0] == '*')
+    {
+        std::string type = symTable.find(str.substr(1))->second.type;
+        return type == "arr_char" || type == "ptr_char";
+    }
     size_t pos = str.find('[');
     if (pos != std::string::npos)
     {
-        return str.substr(0, pos);
+        std::string type = symTable.find(str.substr(0, pos))->second.type;
+        return type == "arr_char" || type == "ptr_char";
     }
-    else
-    {
-        return str;
-    }
+    return symTable.find(str)->second.type == "var_char";
 }
 
-bool ASGenerator::isOneByteType(const std::string &type) const
+std::string ASGenerator::getSymbolType(const std::string &str) const
 {
-    return type == "var_char" || type == "arr_char";
+    if (isNumber(str))
+    {
+        return "var_int";
+    }
+    if (str == "~ret")
+    {
+        return ret_type;
+    }
+    if (str[0] == '&')
+    {
+        std::string type = symTable.find(str.substr(1))->second.type;
+        std::string data_type = type.substr(type.find('_'));
+        return "ptr" + data_type;
+    }
+    if (str[0] == '*')
+    {
+        std::string type = symTable.find(str.substr(1))->second.type;
+        std::string data_type = type.substr(type.find('_'));
+        return "var" + data_type;
+    }
+    size_t pos = str.find('[');
+    if (pos != std::string::npos)
+    {
+        std::string type = symTable.find(str.substr(0, pos))->second.type;
+        std::string data_type = type.substr(type.find('_'));
+        return "var" + data_type;
+    }
+    return symTable.find(str)->second.type;
 }

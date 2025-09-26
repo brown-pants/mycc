@@ -5,8 +5,12 @@
 <declaration_list> -> <declaration> <declaration_list>
 <declaration_list> -> ~
 
-# 定义： 类型 标识符 定义尾
-<declaration> -> type id <dec_tail>
+# 定义： 类型 判断指针
+<declaration> -> type <determine_pointer>
+
+# 判断指针：(*|~) 标识符 定义尾
+<determine_pointer> -> * id <dec_tail>
+<determine_pointer> -> id <dec_tail>
 
 # 定义尾： ;                     表示定义普通变量
 <dec_tail> -> ;
@@ -21,8 +25,12 @@
 <params> -> <param> <params_tail>
 <params> -> ~
 
-# 参数： 数据类型 标识符
-<param> -> type id
+# 参数： 数据类型 判断参数指针
+<param> -> type <param_determine_pointer>
+
+# 判断参数指针： (*|~) 标识符
+<param_determine_pointer> -> * id
+<param_determine_pointer> -> id
 
 # 参数尾： 若干个 , 参数
 <params_tail> -> , <param> <params_tail>
@@ -51,8 +59,12 @@
 <compound> -> <var_dec>
 <compound> -> <statement>
 
-# 变量定义： 数据类型 标识符 变量定义尾
-<var_dec> -> type id <var_dec_tail> ;
+# 变量定义： 数据类型 判断变量指针：
+<var_dec> -> type <var_determine_pointer> ;
+
+# 判断变量指针：(*|~) 标识符 变量定义尾
+<var_determine_pointer> -> * id <var_dec_tail>
+<var_determine_pointer> -> id <var_dec_tail>
 
 #变量定义尾：[常数] 或 空
 <var_dec_tail> -> [ num ]
@@ -114,16 +126,27 @@
 <mulop> -> /
 <mulop> -> %
 
-# 因子： ( 表达式 ) 或 变量 或 函数调用 或 常量
+# 因子： ( 表达式 ) 或 变量 或 函数调用 或 变量取址 或 指针取值 或 常量
 <factor> -> ( <expression> )
 <factor> -> id <id_tail>
+<factor> -> & id <id_tail>
+<factor> -> * <star_tail>
 <factor> -> num
+
+# 取值尾：(表达式) 或 (表达式) = (表达式) 或 (&|~)标识符 标识符尾
+<star_tail> -> ( <expression> ) <determine_assign>
+<star_tail> -> id <id_tail>
+<star_tail> -> & id <id_tail>
+
+# 判断赋值：= 表达式 或 空
+<determine_assign> -> = <expression>
+<determine_assign> -> ~
 
 # 标识符尾： ( 传参列表 )   用于函数调用
 <id_tail> -> ( <args> )
 
-# 标识符尾： 数组索引       用于数组取值或赋值
-<id_tail> -> <arr_idx>
+# 标识符尾： 用于数组取值或赋值
+<id_tail> -> [ <expression> ] <determine_assign>
 
 # 标识符尾： = 表达式      用于普通变量赋值
 <id_tail> -> = <expression>
@@ -138,10 +161,3 @@
 # 传参尾： 若干个 , 表达式
 <arg_tail> -> , <expression> <arg_tail>
 <arg_tail> -> ~
-
-# 数组索引： [ 表达式 ] 数组索引尾
-<arr_idx> -> [ <expression> ] <arr_idx_tail>
-
-# 数组索引尾: = 表达式 或 空
-<arr_idx_tail> -> = <expression>
-<arr_idx_tail> -> ~

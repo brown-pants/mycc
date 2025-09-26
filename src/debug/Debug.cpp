@@ -103,9 +103,24 @@ void Debug::ParamsError(const Token &token, const std::string &str)
     std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "too " << str << " arguments to function " << red << token.lexeme() << white << std::endl;
 }
 
-void Debug::AssignToArrayType(const Token &token)
+void Debug::AssignToErrorType(const Token &token, const std::string &type)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "assignment to expression with array "  << red << token.lexeme() << white << std::endl;
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "assignment to expression with " + type << " " << red << token.lexeme() << white << std::endl;
+}
+
+void Debug::NotSupportedPointerArray(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, pointer arrays are not currently supported "  << red << token.lexeme() << white << std::endl;
+}
+
+void Debug::DereferencingError(const Token &token, const std::string &type)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, " << type << " dereferencing is not currently supported "  << red << token.lexeme() << white << std::endl;
+}
+
+void Debug::InvalidOperands(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "invalid operands to "  << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::SetCurrentFile(const std::string &file)
@@ -162,7 +177,7 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             std::cout << code.result << " = " << code.arg1 << std::endl;
             break;
             case TACGenerator::Op_call_func:
-            std::cout << "call " << code.result << ", " << code.arg1 << std::endl;
+            std::cout << "call " << code.result << ", paramCount: " << code.arg1 << ", returnType: " << code.arg2 << std::endl;
             break;
             case TACGenerator::Op_add:
             std::cout << code.result << " = " << code.arg1 << " + " << code.arg2 << std::endl;

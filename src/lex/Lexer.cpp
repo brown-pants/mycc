@@ -63,6 +63,11 @@ std::vector<Token> Lexer::exec()
             tokens.push_back(Token(Token::Mod, "%", line));
         break;
 
+        //  &
+        case '&': 
+            tokens.push_back(Token(Token::Ampersand, "&", line));
+        break;
+
         //  (
         case '(': 
             tokens.push_back(Token(Token::OpenParen, "(", line));

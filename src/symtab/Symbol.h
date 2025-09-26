@@ -9,6 +9,7 @@ struct Symbol
     enum Type
     {
         Var,
+        Ptr,
         Arr,
         Func
     }type;
@@ -23,6 +24,13 @@ struct VarSymbol : public Symbol
     std::string newName;
 };
 
+struct PtrSymbol : public Symbol
+{
+    PtrSymbol(Token::Type data_type, const std::string &newName) : Symbol(Ptr), data_type(data_type), newName(newName) {}
+    Token::Type data_type;
+    std::string newName;
+};
+
 struct ArrSymbol : public Symbol
 {
     ArrSymbol(Token::Type data_type, int size, const std::string &newName) : Symbol(Arr), data_type(data_type), size(size), newName(newName) {}
@@ -33,8 +41,9 @@ struct ArrSymbol : public Symbol
 
 struct FunctionSymbol : public Symbol
 {
-    FunctionSymbol(Token::Type return_type, const std::vector<Token::Type> &params_type) : Symbol(Func), return_type(return_type), params_type(params_type) {}
+    FunctionSymbol(Token::Type return_type, bool return_pointer, const std::vector<Token::Type> &params_type) : Symbol(Func), return_type(return_type), return_pointer(return_pointer), params_type(params_type) {}
     Token::Type return_type;
+    bool return_pointer;
     std::vector<Token::Type> params_type;
 };
 

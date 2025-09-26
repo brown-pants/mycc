@@ -1,8 +1,17 @@
-int arr[12];
+char arr[13];
+
+void puts(char *s)
+{
+    while(*s != '\0')
+    {
+        mycc_putchar(*s);
+        s = s + 1;
+    }
+}
 
 void HelloWorld_1()
 {
-    int arr[12];
+    char arr[13];
     arr[0] = 'H';
     arr[1] = 'e';
     arr[2] = 'l';
@@ -15,11 +24,8 @@ void HelloWorld_1()
     arr[9] = 'l';
     arr[10] = 'd';
     arr[11] = '\n';
-    int a;
-    for(a = 0;a < 12;a = a + 1)
-    {
-        mycc_putchar(arr[a]);
-    }
+    arr[12] = '\0';
+    puts(arr);
 }
 
 void HelloWorld_2()
@@ -36,11 +42,8 @@ void HelloWorld_2()
     arr[9] = 'l';
     arr[10] = 'd';
     arr[11] = '\n';
-    int a;
-    for(a = 0;a < 12;a = a + 1)
-    {
-        mycc_putchar(arr[a]);
-    }
+    arr[12] = '\0';
+    puts(arr);
 }
 
 int main()

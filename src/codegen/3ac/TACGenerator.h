@@ -22,7 +22,7 @@ public:
         Op_goto,        // goto result
         Op_if,          // if arg1 goto result
         Op_assign,      // result = arg1
-        Op_call_func,   // arg1 = paramsCount, result = funcName
+        Op_call_func,   // arg1 = paramsCount, arg2 = returnType, result = funcName
         Op_add,         // result = arg1 + arg2
         Op_sub,         // result = arg1 - arg2
         Op_mult,        // result = arg1 * arg2
@@ -59,6 +59,7 @@ private:
 
     std::stack<std::string> scopeStack;
     std::unordered_map<Token::Type, unsigned int> dataSizeMap;
+    std::unordered_map<std::string, unsigned int> pointerTemps;
     std::vector<Quaternion> code;
 
     std::string new_temp();
@@ -66,13 +67,15 @@ private:
     Symbol *getSymbol(const std::string &symbol_name);
 
     void generate_3ac(const Parser::TreeNode &node);
-    void dec_var(bool local, const Token &type, const Token &id, bool isArray = false, int arrSize = 1);
-    void dec_function(const Token &type, const Token &id, const Parser::TreeNode &dec_tail);
+    void dec_var(bool local, const Token &type, const Token &id, const std::string &arr_ptr = "", int arrSize = 1);
+    void dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail);
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type);
     std::string do_expression(const Parser::TreeNode &node);
-    int pasing_params(const Parser::TreeNode &node);
+    std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id, const Token &star = Token(), const Token &ampersand = Token());
+    int passing_params(const Parser::TreeNode &node);
     
     bool isNumber(const std::string &str) const;
+    unsigned int getPointerStride(const std::string &str) const; // if (str is a pointer) return stride; else return 0;
 };
 
 #endif

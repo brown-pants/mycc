@@ -23,6 +23,7 @@ private:
     std::unordered_set<std::string> localVar_set;
     std::unordered_map<std::string, VarSymbol> symTable;
     std::string asc;
+    std::string ret_type;
     
     int mOffset;
     int paramOffset;
@@ -39,7 +40,7 @@ private:
     void goto_label(const std::string &label_name);
     void if_goto(const std::string &condition, const std::string &label);
     void assign(const std::string &arg, const std::string &result);
-    void call_func(const std::string &params_count, const std::string &func_name);
+    void call_func(const std::string &params_count, const std::string &return_type, const std::string &func_name);
     void arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
     void relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
 
@@ -48,8 +49,8 @@ private:
 
     bool isOutOfInt32Range(int64_t number) const;
     bool isNumber(const std::string &str) const;
-    std::string getVarName(const std::string &str) const;
-    bool isOneByteType(const std::string &type) const;
+    bool isOneByteType(const std::string &str) const;
+    std::string getSymbolType(const std::string &str) const;
 };
 
 #endif

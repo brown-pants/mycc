@@ -110,12 +110,19 @@ void Parser::initTable()
     ASTable[declaration_list][Token::Eof]                        = { Item{Token::Nul, Vt} };                                     // $ -> { ~ } 
 
     /*<declaration>:
-          type     ->      { type id <dec_tail> }
+          type     ->      { type <determine_pointer> }
     */
-    ASTable[declaration][Token::DT_int]                          = { Item{Token::DT_int, Vt}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };        // type     ->      { type id <dec_tail> }
-    ASTable[declaration][Token::DT_char]                         = { Item{Token::DT_char, Vt}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
-    ASTable[declaration][Token::DT_float]                        = { Item{Token::DT_float, Vt}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
-    ASTable[declaration][Token::Void]                            = { Item{Token::Void, Vt}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
+    ASTable[declaration][Token::DT_int]                          = { Item{Token::DT_int, Vt}, Item{determine_pointer, Vn} };        // type     ->      { type <determine_pointer> }
+    ASTable[declaration][Token::DT_char]                         = { Item{Token::DT_char, Vt}, Item{determine_pointer, Vn} };
+    ASTable[declaration][Token::DT_float]                        = { Item{Token::DT_float, Vt}, Item{determine_pointer, Vn} };
+    ASTable[declaration][Token::Void]                            = { Item{Token::Void, Vt}, Item{determine_pointer, Vn} };
+
+    /*<determine_pointer>:
+          *        ->      { * id <dec_tail> }
+          id       ->      { id <dec_tail> }
+    */
+    ASTable[determine_pointer][Token::Mult]                      = { Item{Token::Mult, Vt}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };  // *        ->      { * id <dec_tail> }
+    ASTable[determine_pointer][Token::Identifier]                = { Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                         // id       ->      { id <dec_tail> }
 
     /*<dec_tail>:
           ;        ->      { ; }
@@ -137,13 +144,20 @@ void Parser::initTable()
     ASTable[params][Token::CloseParen]                           = { Item{Token::Nul, Vt} };                     // )        ->      { ~ }
 
     /*<param>:
-          type     ->      { type id }
+          type     ->      { type <param_determine_pointer> }
     */
-    ASTable[param][Token::DT_int]                                = { Item{Token::DT_int, Vt}, Item{Token::Identifier, Vt} };     // type     ->      { type id }
-    ASTable[param][Token::DT_char]                               = { Item{Token::DT_char, Vt}, Item{Token::Identifier, Vt} };
-    ASTable[param][Token::DT_float]                              = { Item{Token::DT_float, Vt}, Item{Token::Identifier, Vt} };
-    ASTable[param][Token::Void]                                  = { Item{Token::Void, Vt}, Item{Token::Identifier, Vt} };
+    ASTable[param][Token::DT_int]                                = { Item{Token::DT_int, Vt}, Item{param_determine_pointer, Vn} };     // type     ->      { type <param_determine_pointer> }
+    ASTable[param][Token::DT_char]                               = { Item{Token::DT_char, Vt}, Item{param_determine_pointer, Vn} };
+    ASTable[param][Token::DT_float]                              = { Item{Token::DT_float, Vt}, Item{param_determine_pointer, Vn} };
+    ASTable[param][Token::Void]                                  = { Item{Token::Void, Vt}, Item{param_determine_pointer, Vn} };
 
+    /*<param_determine_pointer>:
+          *        ->      { * id }
+          id       ->      { id }
+    */
+    ASTable[param_determine_pointer][Token::Mult]                = { Item{Token::Mult, Vt}, Item{Token::Identifier, Vt} };    // *        ->      { * id }
+    ASTable[param_determine_pointer][Token::Identifier]          = { Item{Token::Identifier, Vt} };                           // id       ->      { id }
+    
     /*<params_tail>:
           )        ->      { ~ }
           ,        ->      { , <param> <params_tail> }
@@ -152,6 +166,8 @@ void Parser::initTable()
     ASTable[params_tail][Token::Comma]                           = { Item{Token::Comma, Vt}, Item{param, Vn}, Item{params_tail, Vn} };   // ,        ->      { , <param> <params_tail> }
     
     /*<statement>:
+          *        ->      { <expression_stmt> }
+          &        ->      { <expression_stmt> }
           id       ->      { <expression_stmt> }
           ;        ->      { <expression_stmt> }
           num      ->      { <expression_stmt> }
@@ -162,6 +178,8 @@ void Parser::initTable()
           for      ->      { <iteration_stmt> }
           return   ->      { <return_stmt> }
     */
+    ASTable[statement][Token::Mult]                              = { Item{expression_stmt, Vn} };        // *        ->      { <expression_stmt> }
+    ASTable[statement][Token::Ampersand]                         = { Item{expression_stmt, Vn} };        // &        ->      { <expression_stmt> }
     ASTable[statement][Token::Identifier]                        = { Item{expression_stmt, Vn} };        // id       ->      { <expression_stmt> }
     ASTable[statement][Token::Semicolon]                         = { Item{expression_stmt, Vn} };        // ;        ->      { <expression_stmt> }
     ASTable[statement][Token::Integer]                           = { Item{expression_stmt, Vn} };        // num      ->      { <expression_stmt> }
@@ -176,18 +194,22 @@ void Parser::initTable()
     ASTable[statement][Token::Return]                            = { Item{return_stmt, Vn} };            // return   ->      { <return_stmt> }
 
     /*<expression_stmt>:
-          id       ->      { <expression> ; }
           ;        ->      { ; }
-          num      ->      { <expression> ; }
+          *        ->      { <expression> ; }
+          &        ->      { <expression> ; }
+          id       ->      { <expression> ; }
           (        ->      { <expression> ; }
+          num      ->      { <expression> ; }
     */
-    ASTable[expression_stmt][Token::Identifier]                  = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // id       ->      { <expression> ; }
     ASTable[expression_stmt][Token::Semicolon]                   = { Item{Token::Semicolon, Vt} };                               // ;        ->      { ; }
+    ASTable[expression_stmt][Token::Mult]                        = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // *        ->      { <expression> ; }
+    ASTable[expression_stmt][Token::Ampersand]                   = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // &        ->      { <expression> ; }
+    ASTable[expression_stmt][Token::Identifier]                  = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // id       ->      { <expression> ; }
+    ASTable[expression_stmt][Token::OpenParen]                   = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // (        ->      { <expression> ; }
     ASTable[expression_stmt][Token::Integer]                     = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // num      ->      { <expression> ; }
     ASTable[expression_stmt][Token::Character]                   = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };
     ASTable[expression_stmt][Token::Float]                       = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };
     ASTable[expression_stmt][Token::String]                      = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };
-    ASTable[expression_stmt][Token::OpenParen]                   = { Item{expression, Vn}, Item{Token::Semicolon, Vt} };         // (        ->      { <expression> ; }
 
     /*<compound_stmt>:
           {        ->      { { <compound_list> } }
@@ -195,6 +217,8 @@ void Parser::initTable()
     ASTable[compound_stmt][Token::OpenBrance]                    = { Item{Token::OpenBrance, Vt}, Item{compound_list, Vn}, Item{Token::CloseBrance, Vt} };       // {        ->      { { <compound_list> } }
 
     /*<compound_list>:
+          *        ->      { <compound> <compound_list> }
+          &        ->      { <compound> <compound_list> }
           type     ->      { <compound> <compound_list> }
           id       ->      { <compound> <compound_list> }
           ;        ->      { <compound> <compound_list> }
@@ -207,6 +231,8 @@ void Parser::initTable()
           for      ->      { <compound> <compound_list> }
           return   ->      { <compound> <compound_list> }
     */
+    ASTable[compound_list][Token::Mult]                          = { Item{compound, Vn}, Item{compound_list, Vn} };      // *        ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::Ampersand]                     = { Item{compound, Vn}, Item{compound_list, Vn} };      // &        ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::DT_int]                        = { Item{compound, Vn}, Item{compound_list, Vn} };      // type     ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::DT_char]                       = { Item{compound, Vn}, Item{compound_list, Vn} };
     ASTable[compound_list][Token::DT_float]                      = { Item{compound, Vn}, Item{compound_list, Vn} };
@@ -227,6 +253,8 @@ void Parser::initTable()
 
     /*<compound>:
           type     ->      { <var_dec> }
+          *        ->      { <statement> }
+          &        ->      { <statement> }
           id       ->      { <statement> }
           ;        ->      { <statement> }
           num      ->      { <statement> }
@@ -241,6 +269,8 @@ void Parser::initTable()
     ASTable[compound][Token::DT_char]                            = { Item{var_dec, Vn} };
     ASTable[compound][Token::DT_float]                           = { Item{var_dec, Vn} };
     ASTable[compound][Token::Void]                               = { Item{var_dec, Vn} };
+    ASTable[compound][Token::Mult]                               = { Item{statement, Vn} };      // *        ->      { <statement> }
+    ASTable[compound][Token::Ampersand]                          = { Item{statement, Vn} };      // &        ->      { <statement> }
     ASTable[compound][Token::Identifier]                         = { Item{statement, Vn} };      // id       ->      { <statement> }
     ASTable[compound][Token::Semicolon]                          = { Item{statement, Vn} };      // ;        ->      { <statement> }
     ASTable[compound][Token::Integer]                            = { Item{statement, Vn} };      // num      ->      { <statement> }
@@ -255,12 +285,19 @@ void Parser::initTable()
     ASTable[compound][Token::Return]                             = { Item{statement, Vn} };      // return   ->      { <statement> }
 
     /*<var_dec>:
-          type     ->      { type id <var_dec_tail> ; }
+          type     ->      { type <var_determine_pointer> ; }
     */
-    ASTable[var_dec][Token::DT_int]                              = { Item{Token::DT_int, Vt}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // type     ->      { type id <var_dec_tail> ; }
-    ASTable[var_dec][Token::DT_char]                             = { Item{Token::DT_char, Vt}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
-    ASTable[var_dec][Token::DT_float]                            = { Item{Token::DT_float, Vt}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
-    ASTable[var_dec][Token::Void]                                = { Item{Token::Void, Vt}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
+    ASTable[var_dec][Token::DT_int]                              = { Item{Token::DT_int, Vt}, Item{var_determine_pointer, Vn}, Item{Token::Semicolon, Vt} };         // type     ->      { type <var_determine_pointer> ; }
+    ASTable[var_dec][Token::DT_char]                             = { Item{Token::DT_char, Vt}, Item{var_determine_pointer, Vn}, Item{Token::Semicolon, Vt} };
+    ASTable[var_dec][Token::DT_float]                            = { Item{Token::DT_float, Vt}, Item{var_determine_pointer, Vn}, Item{Token::Semicolon, Vt} };
+    ASTable[var_dec][Token::Void]                                = { Item{Token::Void, Vt}, Item{var_determine_pointer, Vn}, Item{Token::Semicolon, Vt} };
+
+    /*<var_determine_pointer>:
+          *        ->      { * id <var_dec_tail> }
+          id       ->      { id <var_dec_tail> }
+    */
+    ASTable[var_determine_pointer][Token::Mult]                  = { Item{Token::Mult, Vt}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn} };    // *        ->      { * id <var_dec_tail> }
+    ASTable[var_determine_pointer][Token::Identifier]            = { Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn} };                           // id       ->      { id <var_dec_tail> }
 
     /*<var_dec_tail>:
           ;        ->      { ~ }
@@ -275,6 +312,8 @@ void Parser::initTable()
     ASTable[selection_stmt][Token::If]                           = { Item{Token::If, Vt}, Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt}, Item{statement, Vn}, Item{else_part, Vn} };     // if       ->      { if ( <expression> ) <statement> <else_part> }
 
     /*<else_part>:
+          *        ->      { ~ }
+          &        ->      { ~ }
           type     ->      { ~ }
           id       ->      { ~ }
           ;        ->      { ~ }
@@ -288,6 +327,8 @@ void Parser::initTable()
           for      ->      { ~ }
           return   ->      { ~ }
     */
+    ASTable[else_part][Token::Mult]                              = { Item{Token::Nul, Vt} };                             // *        ->      { ~ }
+    ASTable[else_part][Token::Ampersand]                         = { Item{Token::Nul, Vt} };                             // &        ->      { ~ }
     ASTable[else_part][Token::DT_int]                            = { Item{Token::Nul, Vt} };                             // type     ->      { ~ }
     ASTable[else_part][Token::DT_char]                           = { Item{Token::Nul, Vt} };
     ASTable[else_part][Token::DT_float]                          = { Item{Token::Nul, Vt} };
@@ -320,11 +361,15 @@ void Parser::initTable()
     ASTable[return_stmt][Token::Return]                          = { Item{Token::Return, Vt}, Item{return_tail, Vn}, Item{Token::Semicolon, Vt} };       // return   ->      { return <return_tail> ; }
 
     /*<return_tail>:
+          *        ->      { <expression> }
+          &        ->      { <expression> }
           id       ->      { <expression> }
           ;        ->      { ~ }
           num      ->      { <expression> }
           (        ->      { <expression> }
     */
+    ASTable[return_tail][Token::Mult]                            = { Item{expression, Vn} };     // *        ->      { <expression> }
+    ASTable[return_tail][Token::Ampersand]                       = { Item{expression, Vn} };     // &        ->      { <expression> }
     ASTable[return_tail][Token::Identifier]                      = { Item{expression, Vn} };     // id       ->      { <expression> }
     ASTable[return_tail][Token::Semicolon]                       = { Item{Token::Nul, Vt} };     // ;        ->      { ~ }
     ASTable[return_tail][Token::Integer]                         = { Item{expression, Vn} };     // num      ->      { <expression> }
@@ -334,10 +379,14 @@ void Parser::initTable()
     ASTable[return_tail][Token::OpenParen]                       = { Item{expression, Vn} };     // (        ->      { <expression> }
 
     /*<expression>:
+          *        ->      { <additive_expression> <expression_tail> }
+          &        ->      { <additive_expression> <expression_tail> }
           id       ->      { <additive_expression> <expression_tail> }
           num      ->      { <additive_expression> <expression_tail> }
           (        ->      { <additive_expression> <expression_tail> }
     */
+    ASTable[expression][Token::Mult]                             = { Item{additive_expression, Vn}, Item{expression_tail, Vn} };         // *        ->      { <additive_expression> <expression_tail> }
+    ASTable[expression][Token::Ampersand]                        = { Item{additive_expression, Vn}, Item{expression_tail, Vn} };         // &        ->      { <additive_expression> <expression_tail> }
     ASTable[expression][Token::Identifier]                       = { Item{additive_expression, Vn}, Item{expression_tail, Vn} };         // id       ->      { <additive_expression> <expression_tail> }
     ASTable[expression][Token::Integer]                          = { Item{additive_expression, Vn}, Item{expression_tail, Vn} };         // num      ->      { <additive_expression> <expression_tail> }
     ASTable[expression][Token::Character]                        = { Item{additive_expression, Vn}, Item{expression_tail, Vn} };
@@ -394,10 +443,14 @@ void Parser::initTable()
     ASTable[relop][Token::Not_Eq]                                = { Item{Token::Not_Eq, Vt} };          // !=       ->      { != }
 
     /*<additive_expression>:
+          *        ->      { <term> <additive_expression_tail> }
+          &        ->      { <term> <additive_expression_tail> }
           id       ->      { <term> <additive_expression_tail> }
           num      ->      { <term> <additive_expression_tail> }
           (        ->      { <term> <additive_expression_tail> }
     */
+    ASTable[additive_expression][Token::Mult]                    = { Item{term, Vn}, Item{additive_expression_tail, Vn} };       // *        ->      { <term> <additive_expression_tail> }
+    ASTable[additive_expression][Token::Ampersand]               = { Item{term, Vn}, Item{additive_expression_tail, Vn} };       // &        ->      { <term> <additive_expression_tail> }
     ASTable[additive_expression][Token::Identifier]              = { Item{term, Vn}, Item{additive_expression_tail, Vn} };       // id       ->      { <term> <additive_expression_tail> }
     ASTable[additive_expression][Token::Integer]                 = { Item{term, Vn}, Item{additive_expression_tail, Vn} };       // num      ->      { <term> <additive_expression_tail> }
     ASTable[additive_expression][Token::Character]               = { Item{term, Vn}, Item{additive_expression_tail, Vn} };
@@ -446,10 +499,14 @@ void Parser::initTable()
     ASTable[addop][Token::Minus]                                 = { Item{Token::Minus, Vt} };   // -        ->      { - }
 
     /*<term>:
+          *        ->      { <factor> <term_tail> }
+          &        ->      { <factor> <term_tail> }
           id       ->      { <factor> <term_tail> }
           num      ->      { <factor> <term_tail> }
           (        ->      { <factor> <term_tail> }
     */
+    ASTable[term][Token::Mult]                                   = { Item{factor, Vn}, Item{term_tail, Vn} };    // *        ->      { <factor> <term_tail> }
+    ASTable[term][Token::Ampersand]                              = { Item{factor, Vn}, Item{term_tail, Vn} };    // &        ->      { <factor> <term_tail> }
     ASTable[term][Token::Identifier]                             = { Item{factor, Vn}, Item{term_tail, Vn} };    // id       ->      { <factor> <term_tail> }
     ASTable[term][Token::Integer]                                = { Item{factor, Vn}, Item{term_tail, Vn} };    // num      ->      { <factor> <term_tail> }
     ASTable[term][Token::Character]                              = { Item{factor, Vn}, Item{term_tail, Vn} };
@@ -500,20 +557,68 @@ void Parser::initTable()
     ASTable[mulop][Token::Mod]                                   = { Item{Token::Mod, Vt} };     // %        ->      { % }
 
     /*<factor>:
+          *        ->      { * <star_tail> }
+          &        ->      { & id <id_tail> }
           id       ->      { id <id_tail> }
           num      ->      { num }
           (        ->      { ( <expression> ) }
     */
-    ASTable[factor][Token::Identifier]                           = { Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                   // id       ->      { id <id_tail> }
-    ASTable[factor][Token::Integer]                              = { Item{Token::Integer, Vt} };                                                         // num      ->      { num }
+    ASTable[factor][Token::Mult]                                 = { Item{Token::Mult, Vt}, Item{star_tail, Vn} };                                    // *        ->      { * <star_tail> }
+    ASTable[factor][Token::Ampersand]                            = { Item{Token::Ampersand, Vt}, Item{Token::Identifier, Vt}, Item{id_tail, Vn} };    // &        ->      { & id <id_tail> }
+    ASTable[factor][Token::Identifier]                           = { Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                // id       ->      { id <id_tail> }
+    ASTable[factor][Token::Integer]                              = { Item{Token::Integer, Vt} };                                                      // num      ->      { num }
     ASTable[factor][Token::Character]                            = { Item{Token::Character, Vt} };
     ASTable[factor][Token::Float]                                = { Item{Token::Float, Vt} };
     ASTable[factor][Token::String]                               = { Item{Token::String, Vt} };
-    ASTable[factor][Token::OpenParen]                            = { Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt} };    // (        ->      { ( <expression> ) }   
+    ASTable[factor][Token::OpenParen]                            = { Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt} }; // (        ->      { ( <expression> ) }   
 
+    /*<star_tail>:
+          id       ->      { id <id_tail> }
+          (        ->      { ( <expression> ) <determine_assign> }
+          &        ->      { & id <id_tail> }
+    */
+    ASTable[star_tail][Token::Identifier]                       = { Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                                               // id       ->      { id <id_tail> }
+    ASTable[star_tail][Token::OpenParen]                        = { Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt}, Item{determine_assign, Vn} };    // (        ->      { ( <expression> ) <determine_assign> }
+    ASTable[star_tail][Token::Ampersand]                        = { Item{Token::Ampersand, Vt}, Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                   // &        ->      { & id <id_tail> }
+
+    /*<determine_assign>:
+          ;        ->      { ~ }
+          ]        ->      { ~ }
+          )        ->      { ~ }
+          ,        ->      { ~ }
+          <=       ->      { ~ }
+          <        ->      { ~ }
+          >        ->      { ~ }
+          >=       ->      { ~ }
+          ==       ->      { ~ }
+          !=       ->      { ~ }
+          +        ->      { ~ }
+          -        ->      { ~ }
+          *        ->      { ~ }
+          /        ->      { ~ }
+          %        ->      { ~ }
+          =        ->      { = <expression> }
+    */
+    ASTable[determine_assign][Token::Semicolon]                 = { Item{Token::Nul, Vt} };                             // ;        ->      { ~ }
+    ASTable[determine_assign][Token::CloseSquare]               = { Item{Token::Nul, Vt} };                             // ]        ->      { ~ }
+    ASTable[determine_assign][Token::CloseParen]                = { Item{Token::Nul, Vt} };                             // )        ->      { ~ }
+    ASTable[determine_assign][Token::Comma]                     = { Item{Token::Nul, Vt} };                             // ,        ->      { ~ }
+    ASTable[determine_assign][Token::Less_Eq]                   = { Item{Token::Nul, Vt} };                             // <=       ->      { ~ }
+    ASTable[determine_assign][Token::Less]                      = { Item{Token::Nul, Vt} };                             // <        ->      { ~ }
+    ASTable[determine_assign][Token::Greater]                   = { Item{Token::Nul, Vt} };                             // >        ->      { ~ }
+    ASTable[determine_assign][Token::Greater_Eq]                = { Item{Token::Nul, Vt} };                             // >=       ->      { ~ }
+    ASTable[determine_assign][Token::Eq_Eq]                     = { Item{Token::Nul, Vt} };                             // ==       ->      { ~ }
+    ASTable[determine_assign][Token::Not_Eq]                    = { Item{Token::Nul, Vt} };                             // !=       ->      { ~ }
+    ASTable[determine_assign][Token::Plus]                      = { Item{Token::Nul, Vt} };                             // +        ->      { ~ }
+    ASTable[determine_assign][Token::Minus]                     = { Item{Token::Nul, Vt} };                             // -        ->      { ~ }
+    ASTable[determine_assign][Token::Mult]                      = { Item{Token::Nul, Vt} };                             // *        ->      { ~ }
+    ASTable[determine_assign][Token::Div]                       = { Item{Token::Nul, Vt} };                             // /        ->      { ~ }
+    ASTable[determine_assign][Token::Mod]                       = { Item{Token::Nul, Vt} };                             // %        ->      { ~ }
+    ASTable[determine_assign][Token::Eq]                        = { Item{Token::Eq, Vt}, Item{expression, Vn} };        // =        ->      { = <expression> }
+    
     /*<id_tail>:
           ;        ->      { ~ }
-          [        ->      { <arr_idx> }
+          [        ->      { [ <expression> ] <determine_assign> }
           ]        ->      { ~ }
           (        ->      { ( <args> ) }
           )        ->      { ~ }
@@ -531,31 +636,35 @@ void Parser::initTable()
           %        ->      { ~ }
           =        ->      { = <expression> }
     */
-    ASTable[id_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                     // ;        ->      { ~ }
-    ASTable[id_tail][Token::OpenSquare]                          = { Item{arr_idx, Vn} };                                                        // [        ->      { <arr_idx> }
-    ASTable[id_tail][Token::CloseSquare]                         = { Item{Token::Nul, Vt} };                                                     // ]        ->      { ~ }
-    ASTable[id_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt} };  // (        ->      { ( <args> ) }
-    ASTable[id_tail][Token::CloseParen]                          = { Item{Token::Nul, Vt} };                                                     // )        ->      { ~ }
-    ASTable[id_tail][Token::Comma]                               = { Item{Token::Nul, Vt} };                                                     // ,        ->      { ~ }
-    ASTable[id_tail][Token::Less_Eq]                             = { Item{Token::Nul, Vt} };                                                     // <=       ->      { ~ }
-    ASTable[id_tail][Token::Less]                                = { Item{Token::Nul, Vt} };                                                     // <        ->      { ~ }
-    ASTable[id_tail][Token::Greater]                             = { Item{Token::Nul, Vt} };                                                     // >        ->      { ~ }
-    ASTable[id_tail][Token::Greater_Eq]                          = { Item{Token::Nul, Vt} };                                                     // >=       ->      { ~ }
-    ASTable[id_tail][Token::Eq_Eq]                               = { Item{Token::Nul, Vt} };                                                     // ==       ->      { ~ }
-    ASTable[id_tail][Token::Not_Eq]                              = { Item{Token::Nul, Vt} };                                                     // !=       ->      { ~ }
-    ASTable[id_tail][Token::Plus]                                = { Item{Token::Nul, Vt} };                                                     // +        ->      { ~ }
-    ASTable[id_tail][Token::Minus]                               = { Item{Token::Nul, Vt} };                                                     // -        ->      { ~ }
-    ASTable[id_tail][Token::Mult]                                = { Item{Token::Nul, Vt} };                                                     // *        ->      { ~ }
-    ASTable[id_tail][Token::Div]                                 = { Item{Token::Nul, Vt} };                                                     // /        ->      { ~ }
-    ASTable[id_tail][Token::Mod]                                 = { Item{Token::Nul, Vt} };                                                     // %        ->      { ~ }
-    ASTable[id_tail][Token::Eq]                                  = { Item{Token::Eq, Vt}, Item{expression, Vn} };                                // =        ->      { = <expression> }
+    ASTable[id_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                                                        // ;        ->      { ~ }
+    ASTable[id_tail][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt}, Item{determine_assign, Vn} }; // [        ->      { [ <expression> ] <determine_assign> }
+    ASTable[id_tail][Token::CloseSquare]                         = { Item{Token::Nul, Vt} };                                                                                        // ]        ->      { ~ }
+    ASTable[id_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt} };                                     // (        ->      { ( <args> ) }
+    ASTable[id_tail][Token::CloseParen]                          = { Item{Token::Nul, Vt} };                                                                                        // )        ->      { ~ }
+    ASTable[id_tail][Token::Comma]                               = { Item{Token::Nul, Vt} };                                                                                        // ,        ->      { ~ }
+    ASTable[id_tail][Token::Less_Eq]                             = { Item{Token::Nul, Vt} };                                                                                        // <=       ->      { ~ }
+    ASTable[id_tail][Token::Less]                                = { Item{Token::Nul, Vt} };                                                                                        // <        ->      { ~ }
+    ASTable[id_tail][Token::Greater]                             = { Item{Token::Nul, Vt} };                                                                                        // >        ->      { ~ }
+    ASTable[id_tail][Token::Greater_Eq]                          = { Item{Token::Nul, Vt} };                                                                                        // >=       ->      { ~ }
+    ASTable[id_tail][Token::Eq_Eq]                               = { Item{Token::Nul, Vt} };                                                                                        // ==       ->      { ~ }
+    ASTable[id_tail][Token::Not_Eq]                              = { Item{Token::Nul, Vt} };                                                                                        // !=       ->      { ~ }
+    ASTable[id_tail][Token::Plus]                                = { Item{Token::Nul, Vt} };                                                                                        // +        ->      { ~ }
+    ASTable[id_tail][Token::Minus]                               = { Item{Token::Nul, Vt} };                                                                                        // -        ->      { ~ }
+    ASTable[id_tail][Token::Mult]                                = { Item{Token::Nul, Vt} };                                                                                        // *        ->      { ~ }
+    ASTable[id_tail][Token::Div]                                 = { Item{Token::Nul, Vt} };                                                                                        // /        ->      { ~ }
+    ASTable[id_tail][Token::Mod]                                 = { Item{Token::Nul, Vt} };                                                                                        // %        ->      { ~ }
+    ASTable[id_tail][Token::Eq]                                  = { Item{Token::Eq, Vt}, Item{expression, Vn} };                                                                   // =        ->      { = <expression> }
 
     /*<args>:
+          *        ->      { <expression> <arg_tail> }
+          &        ->      { <expression> <arg_tail> }
           id       ->      { <expression> <arg_tail> }
           num      ->      { <expression> <arg_tail> }
           (        ->      { <expression> <arg_tail> }
           )        ->      { ~ }
     */
+    ASTable[args][Token::Mult]                                   = { Item{expression, Vn}, Item{arg_tail, Vn} };         // *        ->      { <expression> <arg_tail> }
+    ASTable[args][Token::Ampersand]                              = { Item{expression, Vn}, Item{arg_tail, Vn} };         // &        ->      { <expression> <arg_tail> }
     ASTable[args][Token::Identifier]                             = { Item{expression, Vn}, Item{arg_tail, Vn} };         // id       ->      { <expression> <arg_tail> }
     ASTable[args][Token::Integer]                                = { Item{expression, Vn}, Item{arg_tail, Vn} };         // num      ->      { <expression> <arg_tail> }
     ASTable[args][Token::Character]                              = { Item{expression, Vn}, Item{arg_tail, Vn} };
@@ -570,44 +679,4 @@ void Parser::initTable()
     */
     ASTable[arg_tail][Token::CloseParen]                         = { Item{Token::Nul, Vt} };                                                     // )        ->      { ~ }
     ASTable[arg_tail][Token::Comma]                              = { Item{Token::Comma, Vt}, Item{expression, Vn}, Item{arg_tail, Vn} };         // ,        ->      { , <expression> <arg_tail> }
-
-    /*<arr_idx>:
-          [        ->      { [ <expression> ] <arr_idx_tail> }
-    */
-    ASTable[arr_idx][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt}, Item{arr_idx_tail, Vn} };  // [        ->      { [ <expression> ] <arr_idx_tail> }
-
-    /*<arr_idx_tail>:
-          ;        ->      { ~ }
-          ]        ->      { ~ }
-          )        ->      { ~ }
-          ,        ->      { ~ }
-          <=       ->      { ~ }
-          <        ->      { ~ }
-          >        ->      { ~ }
-          >=       ->      { ~ }
-          ==       ->      { ~ }
-          !=       ->      { ~ }
-          +        ->      { ~ }
-          -        ->      { ~ }
-          *        ->      { ~ }
-          /        ->      { ~ }
-          %        ->      { ~ }
-          =        ->      { = <expression> }
-    */
-    ASTable[arr_idx_tail][Token::Semicolon]                      = { Item{Token::Nul, Vt} };                             // ;        ->      { ~ }
-    ASTable[arr_idx_tail][Token::CloseSquare]                    = { Item{Token::Nul, Vt} };                             // ]        ->      { ~ }
-    ASTable[arr_idx_tail][Token::CloseParen]                     = { Item{Token::Nul, Vt} };                             // )        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Comma]                          = { Item{Token::Nul, Vt} };                             // ,        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Less_Eq]                        = { Item{Token::Nul, Vt} };                             // <=       ->      { ~ }
-    ASTable[arr_idx_tail][Token::Less]                           = { Item{Token::Nul, Vt} };                             // <        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Greater]                        = { Item{Token::Nul, Vt} };                             // >        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Greater_Eq]                     = { Item{Token::Nul, Vt} };                             // >=       ->      { ~ }
-    ASTable[arr_idx_tail][Token::Eq_Eq]                          = { Item{Token::Nul, Vt} };                             // ==       ->      { ~ }
-    ASTable[arr_idx_tail][Token::Not_Eq]                         = { Item{Token::Nul, Vt} };                             // !=       ->      { ~ }
-    ASTable[arr_idx_tail][Token::Plus]                           = { Item{Token::Nul, Vt} };                             // +        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Minus]                          = { Item{Token::Nul, Vt} };                             // -        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Mult]                           = { Item{Token::Nul, Vt} };                             // *        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Div]                            = { Item{Token::Nul, Vt} };                             // /        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Mod]                            = { Item{Token::Nul, Vt} };                             // %        ->      { ~ }
-    ASTable[arr_idx_tail][Token::Eq]                             = { Item{Token::Eq, Vt}, Item{expression, Vn} };        // =        ->      { = <expression> }
 }

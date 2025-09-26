@@ -21,6 +21,9 @@ public:
         Div,        //  /
         Mod,        //  %
 
+        /* address */
+        Ampersand,  // &
+
         /* bracket */
         OpenParen,  //  (
         CloseParen, //  )
