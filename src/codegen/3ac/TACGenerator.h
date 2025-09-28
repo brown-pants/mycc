@@ -12,6 +12,7 @@ class TACGenerator
 public:
     enum OpType
     {
+        Op_global_init, // define a global variable and assign an initial value: arg1 = initial_value, arg2 = type, result = varName
         Op_global_var,  // define a global variable : arg1 = size, arg2 = type, result = varName
         Op_local_var,   // define a local variable : arg1 = size, arg2 = type, result = varName
         Op_begin_func,  // begin of function : result = funcName
@@ -67,7 +68,7 @@ private:
     Symbol *getSymbol(const std::string &symbol_name);
 
     void generate_3ac(const Parser::TreeNode &node);
-    void dec_var(bool local, const Token &type, const Token &id, const std::string &arr_ptr = "", int arrSize = 1);
+    void dec_var(bool local, const Token &type, const Token &id, const std::string &value = "", const std::string &arr_ptr = "", int arrSize = 1);
     void dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail);
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type);
     std::string do_expression(const Parser::TreeNode &node);

@@ -25,6 +25,7 @@ public:
     static void NotSupportedPointerArray(const Token &token);
     static void DereferencingError(const Token &token, const std::string &type);
     static void InvalidOperands(const Token &token);
+    static void InitialNotConstant(const Token &token);
 
     static void SetCurrentFile(const std::string &file);
 

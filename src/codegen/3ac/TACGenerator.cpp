@@ -92,18 +92,31 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             id = determine_pointer.tokens[0];
         }
         const Parser::TreeNode &dec_tail = determine_pointer.childs[0];
-        /* <dec_tail> -> ; */
+        /* <dec_tail> -> <determine_assign> ; */
         if (dec_tail.tokens[0].type() == Token::Semicolon)
         {
+            const Parser::TreeNode &determine_assign = dec_tail.childs[0];
+            std::string value = "";
+            /* <determine_assign> -> = <expression> */
+            if (!determine_assign.childs.empty())
+            {
+                value = do_expression(determine_assign.childs[0]);
+                if (!isNumber(value))
+                {
+                    Debug::InitialNotConstant(determine_assign.tokens[0]);
+                    m_hasError = true;
+                    break;
+                }
+            }
             // dec ptr
             if (isPointer)
             {
-                dec_var(false, type, id, "ptr");
+                dec_var(false, type, id, value, "ptr");
             }
             // dec var
             else
             {
-                dec_var(false, type, id);
+                dec_var(false, type, id, value);
             }
         }
         /* <dec_tail> -> [ num ] ; */
@@ -118,11 +131,18 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             }
             // dec arr
             const Token &num = dec_tail.tokens[1];
-            dec_var(false, type, id, "arr", std::stoll(num.lexeme()));
+            dec_var(false, type, id, "", "arr", std::stoll(num.lexeme()));
         }
         /* ( <params> ) <compound_stmt> */
         else if (dec_tail.tokens[0].type() == Token::OpenParen)
         {
+            if (type.type() == Token::Void && isPointer)
+            {
+                Token ptrType(type.type(), type.lexeme() + "*", type.line());
+                Debug::TypeError(ptrType);
+                m_hasError = true;
+                break;
+            }
             // dec func
             dec_function(type, isPointer, id, dec_tail);
         }
@@ -165,12 +185,28 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             // dec ptr
             if (isPointer)
             {
-                dec_var(true, type, id, "ptr");
+                dec_var(true, type, id, "", "ptr");
             }
             // dec var
             else
             {
-                dec_var(true, type, id);
+                dec_var(true, type, id, "");
+            }
+        }
+        /* <var_dec_tail> -> = <expression> */
+        else if (var_dec_tail.tokens[0].type() == Token::Eq)
+        {
+            const Parser::TreeNode &expression = var_dec_tail.childs[0];
+            std::string value = do_expression(expression);
+            // dec ptr
+            if (isPointer)
+            {
+                dec_var(true, type, id, value, "ptr");
+            }
+            // dec var
+            else
+            {
+                dec_var(true, type, id, value);
             }
         }
         /* <var_dec_tail> -> [ num ] */
@@ -184,7 +220,7 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 break;
             }
             const Token &num = var_dec_tail.tokens[1];
-            dec_var(true, type, id, "arr", std::stoll(num.lexeme()));
+            dec_var(true, type, id, "", "arr", std::stoll(num.lexeme()));
         }
         break;
     }
@@ -279,7 +315,7 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
 
 }
 
-void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const std::string &arr_ptr, int arrSize)
+void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const std::string &value, const std::string &arr_ptr, int arrSize)
 {
     if (type.type() == Token::Void)
     {
@@ -298,25 +334,49 @@ void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const
         std::string newName = id.lexeme();
         if (local)
         {
-            //newName += "~" + std::to_string(scope_counter);
             const std::string &suffix = scopeStack.top();
             newName += "~" + suffix.substr(suffix.find('~') + 1);
         }
         std::string data_type = (type.type() == Token::DT_int ? "int" : "char");
+        // array
         if (arr_ptr == "arr")
         {
             SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new ArrSymbol(type.type(), arrSize, newName));
             code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()] * arrSize), "arr_" + data_type, newName });
         }
-        else if (arr_ptr == "ptr")
-        {
-            SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new PtrSymbol(type.type(), newName));
-            code.push_back({ local ? Op_local_var : Op_global_var, "8", "ptr_" + data_type, newName });
-        }
+        // ptr or var
         else
         {
-            SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new VarSymbol(type.type(), newName));
-            code.push_back({ local ? Op_local_var : Op_global_var, std::to_string(dataSizeMap[type.type()]), "var_" + data_type, newName });
+            std::string size;
+            std::string sym_type;
+            if (arr_ptr == "ptr")
+            {
+                SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new PtrSymbol(type.type(), newName));
+                sym_type = "ptr_" + data_type;
+                size = "8";
+            }
+            else
+            {
+                SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), new VarSymbol(type.type(), newName));
+                sym_type = "var_" + data_type;
+                size = std::to_string(dataSizeMap[type.type()]);
+            }
+            if (local)
+            {
+                code.push_back({ Op_local_var, size, sym_type, newName });
+                if (value != "")
+                {
+                    code.push_back({ Op_assign, value, "", newName});
+                }
+            }
+            else if (value != "")
+            {
+                code.push_back({ Op_global_init, value, sym_type, newName });
+            }
+            else
+            {
+                code.push_back({ Op_global_var, size, sym_type, newName });
+            }
         }
     }
 }

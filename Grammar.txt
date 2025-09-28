@@ -12,8 +12,8 @@
 <determine_pointer> -> * id <dec_tail>
 <determine_pointer> -> id <dec_tail>
 
-# 定义尾： ;                     表示定义普通变量
-<dec_tail> -> ;
+# 定义尾： 判断赋值 ;                    表示定义普通变量
+<dec_tail> -> <determine_assign> ;
 
 # 定义尾： [常数]                 表示定义数组
 <dec_tail> -> [ num ] ;
@@ -66,8 +66,9 @@
 <var_determine_pointer> -> * id <var_dec_tail>
 <var_determine_pointer> -> id <var_dec_tail>
 
-#变量定义尾：[常数] 或 空
+#变量定义尾：[常数] 或 判断赋值
 <var_dec_tail> -> [ num ]
+<var_dec_tail> -> = <expression>
 <var_dec_tail> -> ~
 
 # 选择表达式： if ( 表达式 ) 语句 否则语句

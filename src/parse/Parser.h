@@ -16,7 +16,7 @@ public:
         declaration_list,           //  <declaration_list>          -> <declaration> <declaration_list> | ~
         declaration,                //  <declaration>               -> type <determine_pointer>
         determine_pointer,          //  <determine_pointer>         -> * id <dec_tail> | id <dec_tail>
-        dec_tail,                   //  <dec_tail>                  -> ; | [ num ] ; | ( <params> ) <compound_stmt>
+        dec_tail,                   //  <dec_tail>                  -> <determine_assign> ; | [ num ] ; | ( <params> ) <compound_stmt>
         params,                     //  <params>                    -> <param> <params_tail> | ~
         param,                      //  <param>                     -> type <param_determine_pointer>
         param_determine_pointer,    //  <param_determine_pointer>   -> * id | id
@@ -28,7 +28,7 @@ public:
         compound,                   //  <compound>                  -> <var_dec> | <statement>
         var_dec,                    //  <var_dec>                   -> type <var_determine_pointer> ;
         var_determine_pointer,      //  <var_determine_pointer>     -> * id <var_dec_tail> | id <var_dec_tail>
-        var_dec_tail,               //  <var_dec_tail>              -> [ num ] | ~
+        var_dec_tail,               //  <var_dec_tail>              -> [ num ] | <determine_assign>
         selection_stmt,             //  <selection_stmt>            -> if ( <expression> ) <statement> <else_part>
         else_part,                  //  <else_part>                 -> else <statement> | ~
         iteration_stmt,             //  <iteration_stmt>            -> while ( <expression> ) <statement> | for ( <expression> ; <expression> ; <expression> ) <statement>

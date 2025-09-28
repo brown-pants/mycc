@@ -123,6 +123,11 @@ void Debug::InvalidOperands(const Token &token)
     std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "invalid operands to "  << red << token.lexeme() << white << std::endl;
 }
 
+void Debug::InitialNotConstant(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "initializer element is not constant "  << red << token.lexeme() << white << std::endl;
+}
+
 void Debug::SetCurrentFile(const std::string &file)
 {
     curFile = file;
@@ -146,6 +151,9 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
         std::cout << std::endl;
         switch(code.op)
         {
+            case TACGenerator::Op_global_init:
+            std::cout << "global " << code.result << " = " << code.arg1 << ", " << code.arg2 << std::endl;
+            break;
             case TACGenerator::Op_global_var:
             std::cout << "global " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;

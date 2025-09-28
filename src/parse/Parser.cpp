@@ -54,7 +54,7 @@ Parser::TreeNode Parser::exec()
                     nodeStack.pop();
                 }
                 nodeStack.push(std::pair<TreeNode *, int>{ &*topNode.first->childs.rbegin(), items.size() });
-                if (!items.empty() && items[0].item == Token::Nul)
+                if (!items.empty() && items[0].type == Vt && items[0].item == Token::Nul)
                 {// ε
                     nodeStack.pop();
                 }
@@ -125,11 +125,13 @@ void Parser::initTable()
     ASTable[determine_pointer][Token::Identifier]                = { Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                         // id       ->      { id <dec_tail> }
 
     /*<dec_tail>:
-          ;        ->      { ; }
+          ;        ->      { <determine_assign> ; }
+          =        ->      { <determine_assign> ; }
           [        ->      { [ num ] ; }        num: Integer
           (        ->      { ( <params> ) <compound_stmt> }
     */
-    ASTable[dec_tail][Token::Semicolon]                          = { Item{Token::Semicolon, Vt} };                                                                                        // ;        ->      { ; }
+    ASTable[dec_tail][Token::Semicolon]                          = { Item{determine_assign, Vn}, Item{Token::Semicolon, Vt} };                                                            // ;        ->      { <determine_assign> ; }
+    ASTable[dec_tail][Token::Eq]                                 = { Item{determine_assign, Vn}, Item{Token::Semicolon, Vt} };                                                            // =        ->      { <determine_assign> ; }
     ASTable[dec_tail][Token::OpenSquare]                         = { Item{Token::OpenSquare, Vt}, Item{Token::Integer, Vt}, Item{Token::CloseSquare, Vt}, Item{Token::Semicolon, Vt} };   // [        ->      { [ num ] ; }        num: Integer
     ASTable[dec_tail][Token::OpenParen]                          = { Item{Token::OpenParen, Vt}, Item{params, Vn}, Item{Token::CloseParen, Vt}, Item{compound_stmt, Vn} };                // (        ->      { ( <params> ) <compound_stmt> }
 
@@ -302,9 +304,11 @@ void Parser::initTable()
     /*<var_dec_tail>:
           ;        ->      { ~ }
           [        ->      { [ num ] }          num: Integer
+          =        ->      { = <expression> }
     */
     ASTable[var_dec_tail][Token::Semicolon]                      = { Item{Token::Nul, Vt} };                                                                     // ;        ->      { ~ }
     ASTable[var_dec_tail][Token::OpenSquare]                     = { Item{Token::OpenSquare, Vt}, Item{Token::Integer, Vt}, Item{Token::CloseSquare, Vt} };      // [        ->      { [ num ] }          num: Integer
+    ASTable[var_dec_tail][Token::Eq]                             = { Item{Token::Eq, Vt}, Item{expression, Vn} };                                                // =        ->      { = <expression> }
     
     /*<selection_stmt>:
           if       ->      { if ( <expression> ) <statement> <else_part> }

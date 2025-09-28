@@ -14,6 +14,9 @@ std::string ASGenerator::exec()
     {
         switch(code.op)
         {
+        case TACGenerator::Op_global_init:
+            dec_global_init(code.result, code.arg1, code.arg2);
+            break;
         case TACGenerator::Op_global_var:
             dec_global_var(code.result, code.arg1, code.arg2);
             break;
@@ -161,6 +164,16 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
     }
     // normal variable
     return symTable[var].addr;
+}
+
+void ASGenerator::dec_global_init(const std::string &var_name, const std::string &value, const std::string &type)
+{
+    std::string as_type = (type == "var_char" ? ".byte" : ".quad");
+    asc += "\t.global " + var_name + "\n";          //      .global {var_name}
+    asc += "\t.data\n";                             //      .data
+    asc += var_name + ":\n";                        // {var_name}:
+    asc += "\t" + as_type + " " + value + "\n";     //      {.byte | .quad} {value}
+    symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
 }
 
 void ASGenerator::dec_global_var(const std::string &var_name, const std::string &size, const std::string &type)
