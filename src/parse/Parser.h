@@ -16,7 +16,7 @@ public:
         declaration_list,           //  <declaration_list>          -> <declaration> <declaration_list> | ~
         declaration,                //  <declaration>               -> type <determine_pointer>
         determine_pointer,          //  <determine_pointer>         -> * id <dec_tail> | id <dec_tail>
-        dec_tail,                   //  <dec_tail>                  -> <determine_assign> ; | [ num ] ; | ( <params> ) <compound_stmt>
+        dec_tail,                   //  <dec_tail>                  -> ; | = <expression> ; | [ num ] ; | ( <params> ) <compound_stmt>
         params,                     //  <params>                    -> <param> <params_tail> | ~
         param,                      //  <param>                     -> type <param_determine_pointer>
         param_determine_pointer,    //  <param_determine_pointer>   -> * id | id
@@ -34,8 +34,10 @@ public:
         iteration_stmt,             //  <iteration_stmt>            -> while ( <expression> ) <statement> | for ( <expression> ; <expression> ; <expression> ) <statement>
         return_stmt,                //  <return_stmt>               -> return <return_tail> ;
         return_tail,                //  <return_tail>               -> <expression> | ~
-        expression,                 //  <expression>                -> <additive_expression> <expression_tail>
-        expression_tail,            //  <expression_tail>           -> <relop> <additive_expression> | ~
+        expression,                 //  <expression>                -> <relational_expression> <expression_tail>
+        expression_tail,            //  <expression_tail>           -> = <relational_expression> <expression_tail> | ~
+        relational_expression,      //  <relational_expression>     -> <additive_expression> <relational_expression_tail>
+        relational_expression_tail, //  <relational_expression_tail>-> <relop> <additive_expression> <relational_expression_tail> | ~
         relop,                      //  <relop>                     -> <= | < | > | >= | == | !=
         additive_expression,        //  <additive_expression>       -> <term> <additive_expression_tail>
         additive_expression_tail,   //  <additive_expression_tail>  -> <addop> <term> <additive_expression_tail> | ~
@@ -43,10 +45,8 @@ public:
         term,                       //  <term>                      -> <factor> <term_tail>
         term_tail,                  //  <term_tail>                 -> <mulop> <factor> <term_tail> | ~
         mulop,                      //  <mulop>                     -> * | /
-        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <star_tail> | num
-        star_tail,                  //  <star_tail>                 -> ( <expression> ) <determine_assign> | id <id_tail> | & id <id_tail>
-        determine_assign,           //  <determine_assign>          -> = <expression> | ~
-        id_tail,                    //  <id_tail>                   -> ( <args> ) <determine_assign> | [ <expression> ] <determine_assign> | <expression> | ~
+        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | num
+        id_tail,                    //  <id_tail>                   -> ( <args> ) | [ <expression> ] | ~
         args,                       //  <args>                      -> <expression> <arg_tail> | ~
         arg_tail,                   //  <arg_tail>                  -> , <expression> <arg_tail> | ~
     };
@@ -81,7 +81,7 @@ private:
         ItemType type;
     };
 
-    std::vector<Item> ASTable[37][37];
+    std::vector<Item> ASTable[39][37];
 
     void initTable();
 };

@@ -72,7 +72,7 @@ private:
     void dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail);
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type);
     std::string do_expression(const Parser::TreeNode &node);
-    std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id, const Token &star = Token(), const Token &ampersand = Token());
+    std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id, const Token &ampersand = Token());
     int passing_params(const Parser::TreeNode &node);
     
     bool isNumber(const std::string &str) const;

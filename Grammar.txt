@@ -12,8 +12,11 @@
 <determine_pointer> -> * id <dec_tail>
 <determine_pointer> -> id <dec_tail>
 
-# 定义尾： 判断赋值 ;                    表示定义普通变量
-<dec_tail> -> <determine_assign> ;
+# 定义尾：;                      表示定义普通变量
+<dec_tail> -> ;
+
+# 定义尾： = 表达式               表示定义普通变量并赋值
+<dec_tail> -> = <expression> ;
 
 # 定义尾： [常数]                 表示定义数组
 <dec_tail> -> [ num ] ;
@@ -37,7 +40,7 @@
 <params_tail> -> ~
 
 #         ...;        {...}   if...else...  while for   return ...;
-# 语句： 表达式语句 或 复合表达式 或 选择表达式 或 迭代表达式 或 返回表达式
+# 语句： 表达式语句 或 复合语句 或 选择语句 或 迭代语句 或 返回语句
 <statement> -> <expression_stmt>
 <statement> -> <compound_stmt>
 <statement> -> <selection_stmt>
@@ -48,14 +51,14 @@
 <expression_stmt> -> <expression> ;
 <expression_stmt> -> ;
 
-# 复合表达式： { 复合列表 }
+# 复合语句： { 复合列表 }
 <compound_stmt> -> { <compound_list> }
 
-# 复合列表: 若干 复合语句
+# 复合列表: 若干 单复合语句
 <compound_list> -> <compound> <compound_list>
 <compound_list> -> ~
 
-# 复合语句： 变量定义 或 语句
+# 单复合语句： 变量定义 或 语句
 <compound> -> <var_dec>
 <compound> -> <statement>
 
@@ -71,30 +74,37 @@
 <var_dec_tail> -> = <expression>
 <var_dec_tail> -> ~
 
-# 选择表达式： if ( 表达式 ) 语句 否则语句
+# 选择语句： if ( 表达式 ) 语句 否则语句
 <selection_stmt> -> if ( <expression> ) <statement> <else_part>
 
 # 否则语句： else 语句 或 空
 <else_part> -> else <statement>
 <else_part> -> ~
 
-# 迭代表达式： while ( 表达式 ) 语句 或 for ( 表达式 ; 表达式 ; 表达式 ) 语句
+# 迭代语句： while ( 表达式 ) 语句 或 for ( 表达式 ; 表达式 ; 表达式 ) 语句
 <iteration_stmt> -> while ( <expression> ) <statement>
 <iteration_stmt> -> for ( <expression> ; <expression> ; <expression> ) <statement>
 
-# 返回表达式： return 返回尾
+# 返回语句： return 返回尾
 <return_stmt> -> return <return_tail> ;
 
 # 返回尾： 表达式 或 空
 <return_tail> -> <expression>
 <return_tail> -> ~
 
-# 表达式： 算术表达式 表达式尾：
-<expression> -> <additive_expression> <expression_tail>
+# 表达式：关系表达式 表达式尾
+<expression> -> <relational_expression> <expression_tail>
 
-# 表达式尾： 关系运算符 算术表达式 或 空
-<expression_tail> -> <relop> <additive_expression>
+# 表达式尾：若干个 = 关系表达式 或 空
+<expression_tail> -> = <relational_expression> <expression_tail>
 <expression_tail> -> ~
+
+# 关系表达式： 算术表达式 关系表达式尾：
+<relational_expression> -> <additive_expression> <relational_expression_tail>
+
+# 关系表达式尾： 若干个 关系运算符 算术表达式 或 空
+<relational_expression_tail> -> <relop> <additive_expression> <relational_expression_tail>
+<relational_expression_tail> -> ~
 
 # 关系运算符： <= 或 < 或 > 或 >= 或 == 或 !=
 <relop> -> <=
@@ -131,26 +141,14 @@
 <factor> -> ( <expression> )
 <factor> -> id <id_tail>
 <factor> -> & id <id_tail>
-<factor> -> * <star_tail>
+<factor> -> * <factor>
 <factor> -> num
 
-# 取值尾：(表达式) 或 (表达式) = (表达式) 或 (&|~)标识符 标识符尾
-<star_tail> -> ( <expression> ) <determine_assign>
-<star_tail> -> id <id_tail>
-<star_tail> -> & id <id_tail>
-
-# 判断赋值：= 表达式 或 空
-<determine_assign> -> = <expression>
-<determine_assign> -> ~
-
 # 标识符尾： ( 传参列表 )   用于函数调用
-<id_tail> -> ( <args> ) <determine_assign>
+<id_tail> -> ( <args> )
 
 # 标识符尾： 用于数组取值或赋值
-<id_tail> -> [ <expression> ] <determine_assign>
-
-# 标识符尾： = 表达式      用于普通变量赋值
-<id_tail> -> = <expression>
+<id_tail> -> [ <expression> ]
 
 # 标识符尾： 空           用于普通变量取值
 <id_tail> -> ~
