@@ -143,7 +143,7 @@
 <determine_assign> -> ~
 
 # 标识符尾： ( 传参列表 )   用于函数调用
-<id_tail> -> ( <args> )
+<id_tail> -> ( <args> ) <determine_assign>
 
 # 标识符尾： 用于数组取值或赋值
 <id_tail> -> [ <expression> ] <determine_assign>

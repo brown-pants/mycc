@@ -620,7 +620,7 @@ void Parser::initTable()
           ;        ->      { ~ }
           [        ->      { [ <expression> ] <determine_assign> }
           ]        ->      { ~ }
-          (        ->      { ( <args> ) }
+          (        ->      { ( <args> ) <determine_assign> }
           )        ->      { ~ }
           ,        ->      { ~ }
           <=       ->      { ~ }
@@ -639,7 +639,7 @@ void Parser::initTable()
     ASTable[id_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                                                        // ;        ->      { ~ }
     ASTable[id_tail][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt}, Item{determine_assign, Vn} }; // [        ->      { [ <expression> ] <determine_assign> }
     ASTable[id_tail][Token::CloseSquare]                         = { Item{Token::Nul, Vt} };                                                                                        // ]        ->      { ~ }
-    ASTable[id_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt} };                                     // (        ->      { ( <args> ) }
+    ASTable[id_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt}, Item{determine_assign, Vn} };         // (        ->      { ( <args> ) <determine_assign> }
     ASTable[id_tail][Token::CloseParen]                          = { Item{Token::Nul, Vt} };                                                                                        // )        ->      { ~ }
     ASTable[id_tail][Token::Comma]                               = { Item{Token::Nul, Vt} };                                                                                        // ,        ->      { ~ }
     ASTable[id_tail][Token::Less_Eq]                             = { Item{Token::Nul, Vt} };                                                                                        // <=       ->      { ~ }

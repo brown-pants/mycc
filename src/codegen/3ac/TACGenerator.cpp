@@ -716,13 +716,22 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                     {
                         std::string id = var.substr(idx);
                         std::string scope = curFunName + id;
-                        var = var.substr(0, idx);
-                        sym = SymbolTable::GetInstance().find(var, scope);
+                        sym = SymbolTable::GetInstance().find(var.substr(0, idx), scope);
                     }
                     if (sym->type == Symbol::Arr)
                     {
                         left_value = left_value.substr(1) + "[0]";
                     }
+                    else
+                    {
+                        left_value = var;
+                    }
+                }
+                else if (isNumber(left_value))
+                {
+                    Debug::InvalidOperands(star);
+                    m_hasError = true;
+                    return "";
                 }
                 else
                 {
@@ -1016,7 +1025,7 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
         code.push_back({ Op_assign, temp, "", left_value });
         return left_value;
     }
-    /* <id_tail> -> ( <args> ) */
+    /* <id_tail> -> ( <args> ) <determine_assign> */
     else if (id_tail.tokens[0].type() == Token::OpenParen)
     {
         if (id_sym->type != Symbol::Func)
@@ -1033,6 +1042,14 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
             return "";
         }
         const Parser::TreeNode &args = id_tail.childs[0];
+        const Parser::TreeNode &determine_assign = id_tail.childs[1];
+        /* <determine_assign> -> = <expression> */
+        if (!hasStar && !determine_assign.childs.empty())
+        {
+            Debug::InvalidOperands(determine_assign.tokens[0]);
+            m_hasError = true;
+            return "";
+        }
         int paramsCount = passing_params(args);
         if (paramsCount > func_sym->params_type.size())
         {
@@ -1069,6 +1086,13 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
             pointerTemps.insert(std::pair<std::string, unsigned int>(return_value, stride));
         }
         code.push_back({ Op_assign, "~ret", "", return_value });
+        /* <determine_assign> -> = <expression> */
+        if (!determine_assign.childs.empty())
+        {
+            const Parser::TreeNode &expression = determine_assign.childs[0];
+            std::string right_value = do_expression(expression);
+            code.push_back({ Op_assign, right_value, "", star.lexeme() + return_value });
+        }
         return hasStar ? star.lexeme() + return_value : return_value;
     }
     return "";

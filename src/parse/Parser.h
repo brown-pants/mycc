@@ -46,7 +46,7 @@ public:
         factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <star_tail> | num
         star_tail,                  //  <star_tail>                 -> ( <expression> ) <determine_assign> | id <id_tail> | & id <id_tail>
         determine_assign,           //  <determine_assign>          -> = <expression> | ~
-        id_tail,                    //  <id_tail>                   -> ( <args> ) | [ <expression> ] <determine_assign> | <expression> | ~
+        id_tail,                    //  <id_tail>                   -> ( <args> ) <determine_assign> | [ <expression> ] <determine_assign> | <expression> | ~
         args,                       //  <args>                      -> <expression> <arg_tail> | ~
         arg_tail,                   //  <arg_tail>                  -> , <expression> <arg_tail> | ~
     };
