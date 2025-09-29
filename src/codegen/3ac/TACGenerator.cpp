@@ -527,29 +527,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 m_hasError = true;
                 return "";
             }
-            if (left_value[0] != '*' && left_value.find('[') == std::string::npos)
-            {
-                int idx = left_value.find('~');
-                Symbol *sym;
-                // global var
-                if (idx == std::string::npos)
-                {
-                    sym = SymbolTable::GetInstance().find(left_value, ".global");
-                }
-                // local var
-                else
-                {
-                    std::string id = left_value.substr(idx);
-                    std::string scope = curFunName + id;
-                    sym = SymbolTable::GetInstance().find(left_value.substr(0, idx), scope);
-                }
-                if (sym->type == Symbol::Arr)
-                {
-                    Debug::AssignToErrorType(eq_token, "array");
-                    m_hasError = true;
-                    return "";
-                }
-            }
             code.push_back({ Op_assign, right_value, "", left_value});
             assign_stack.push(left_value);
         }
@@ -944,30 +921,32 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
             Token::Type type = static_cast<ArrSymbol *>(id_sym)->data_type;
             unsigned int stride = dataSizeMap[type];
             pointerTemps.insert(std::pair<std::string, unsigned int>(temp, stride));
+            std::string prefix = (id_sym->type == Symbol::Arr ? "&" : "");
             if (isNumber(idx))
             {
                 long long offset = std::stoll(idx) * stride;
-                code.push_back({ Op_add, "&" + newName, std::to_string(offset), temp });
+                code.push_back({ Op_add, prefix + newName, std::to_string(offset), temp });
             }
             else
             {
                 std::string offset_temp = new_temp();
                 code.push_back({ Op_mult, idx, std::to_string(stride), offset_temp });
-                code.push_back({ Op_add, "&" + newName, offset_temp, temp });
+                code.push_back({ Op_add, prefix + newName, offset_temp, temp });
             }
             return temp;
         }
         
         std::string result;
+        unsigned int data_size = dataSizeMap[data_type];
         
         // idx is a num
         if (isNumber(idx))
         {
-            long long offset = std::stoll(idx) * dataSizeMap[data_type];
+            long long offset = std::stoll(idx) * data_size;
             if (id_sym->type == Symbol::Ptr)
             {
                 std::string ptr_temp = new_temp();
-                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, dataSizeMap[data_type]));
+                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, data_size));
                 code.push_back({ Op_add, newName, std::to_string(offset), ptr_temp });
                 result = "*" + ptr_temp;
             }
@@ -980,11 +959,11 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
         else
         {
             std::string offset = new_temp();
-            code.push_back({ Op_mult, idx, std::to_string(dataSizeMap[data_type]), offset });
+            code.push_back({ Op_mult, idx, std::to_string(data_size), offset });
             if (id_sym->type == Symbol::Ptr)
             {
                 std::string ptr_temp = new_temp();
-                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, dataSizeMap[data_type]));
+                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, data_size));
                 code.push_back({ Op_add, newName, offset, ptr_temp });
                 result = "*" + ptr_temp;
             }
