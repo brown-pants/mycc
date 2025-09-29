@@ -119,10 +119,7 @@ std::vector<Token> Lexer::exec()
             }
             else 
             {
-                // currently don't support '!'
-                std::cout << "Sorry, currently don't support '!'." << std::endl;
                 tokens.push_back(Token(Token::Not, "!", line));
-                m_hasError = true;
             }
         break;
 

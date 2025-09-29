@@ -50,6 +50,9 @@ std::string ASGenerator::exec()
         case TACGenerator::Op_call_func:
             call_func(code.arg1, code.arg2, code.result);
             break;
+        case TACGenerator::Op_not:
+            logic_not(code.arg1, code.result);
+            break;
         case TACGenerator::Op_add:
             arithmetic("+", code.arg1, code.arg2, code.result);
             break;
@@ -352,6 +355,39 @@ void ASGenerator::call_func(const std::string &params_count, const std::string &
     asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
     asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
     ret_type = return_type;
+}
+
+void ASGenerator::logic_not(const std::string &arg, const std::string &result)
+{
+    // undefined temp
+    if (result.substr(0, 2) == "t^")
+    {
+        dec_local_var(result, "1", "var_char");
+    }
+
+    std::string result_code = symTable[result].addr;
+    std::string arg_code = symTable[arg].addr;
+    
+    if (isOneByteType(arg))
+    {
+        asc += "\tmovb " + arg_code + ", %al\n";     //  movb {arg}, %al
+        asc += "\txorb $1, %al\n";              //  xorb $1, %al
+    }
+    else
+    {
+        asc += "\tmovq " + arg_code + ", %rax\n";    //  movq {arg}, %rax
+        asc += "\ttestq %rax, %rax\n";          //  testq %rax, %rax
+        asc += "\tsetz %al\n";                  //  setz %al
+    }
+    if (isOneByteType(result))
+    {
+        asc += "\tmovb %al, " + result_code + "\n";  //  movb %al, {result}
+    }
+    else
+    {
+        asc += "\tmovzbq %al, %rax\n";          //  movzbq %al, %rax
+        asc += "\tmovq %rax, " + result_code + "\n"; //  movq %rax, {result}
+    }
 }
 
 void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)

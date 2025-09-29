@@ -45,7 +45,7 @@ public:
         term,                       //  <term>                      -> <factor> <term_tail>
         term_tail,                  //  <term_tail>                 -> <mulop> <factor> <term_tail> | ~
         mulop,                      //  <mulop>                     -> * | /
-        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | num
+        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | ! <factor> | num
         id_tail,                    //  <id_tail>                   -> ( <args> ) | [ <expression> ] | ~
         args,                       //  <args>                      -> <expression> <arg_tail> | ~
         arg_tail,                   //  <arg_tail>                  -> , <expression> <arg_tail> | ~

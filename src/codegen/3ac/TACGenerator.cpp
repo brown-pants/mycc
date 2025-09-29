@@ -823,6 +823,20 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 return star.lexeme() + addr;
             }
         }
+        /* <factor> -> ! <factor> */
+        else if (node.tokens[0].type() == Token::Not)
+        {
+            const Parser::TreeNode &factor = node.childs[0];
+            std::string var = do_expression(factor);
+            if (isNumber(var))
+            {
+                long long result = !std::stoll(var);
+                return std::to_string(result);
+            }
+            std::string temp = new_temp();
+            code.push_back({ Op_not, var, "", temp });
+            return temp;
+        }
         /* <factor> -> num */
         else
         {

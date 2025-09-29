@@ -142,6 +142,7 @@
 <factor> -> id <id_tail>
 <factor> -> & id <id_tail>
 <factor> -> * <factor>
+<factor> -> ! <factor>
 <factor> -> num
 
 # 标识符尾： ( 传参列表 )   用于函数调用
