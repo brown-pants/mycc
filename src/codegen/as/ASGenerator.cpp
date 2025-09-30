@@ -130,44 +130,6 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
         asc += "\tmovq %rax, " + ptr_temp_code + "\n";  // movq %rax, {ptr_temp_code}
         return ptr_temp_code;
     }
-    size_t found = var.find('[');
-    // array
-    if (found != std::string::npos)
-    {
-        std::string var_name = var.substr(0, found);
-        std::string idx = var.substr(found + 1, var.size() - found - 2);
-        std::string idx_code;
-        std::string arr_code = symTable[var_name].addr;
-        std::string mov = "movq";
-
-        if (isNumber(idx))
-        {
-            idx_code = "$" + idx;
-            if (isOutOfInt32Range(std::stoll(idx)))
-            {
-                mov = "movabsq";
-            }
-        }
-        else
-        {
-            idx_code = symTable[idx].addr;
-        }
-        asc += "\t" + mov + " " + idx_code + ", %rdx\n";        //      {movq | movabsq} {idx_code}, %rdx
-        asc += "\tleaq " + arr_code + ", %rbx\n";               //      leaq {arr_code}, %rbx
-        
-        if (isWrite)
-        {
-            return "(%rbx, %rdx)";
-        }
-        
-        static int counter = 0;
-        std::string idx_temp = "idx~" + std::to_string(counter ++);
-        dec_local_var(idx_temp, "8", getSymbolType(var));
-        std::string idx_temp_code = symTable[idx_temp].addr;
-        asc += "\tmovq (%rbx, %rdx), %rbx\n";                   //      movq {addr}, %rbx
-        asc += "\tmovq %rbx, " + idx_temp_code + "\n";          //      movq %rbx, {idx_temp}
-        return idx_temp_code;
-    }
     // normal variable
     return symTable[var].addr;
 }
@@ -752,12 +714,6 @@ bool ASGenerator::isOneByteType(const std::string &str) const
         std::string type = symTable.find(str.substr(1))->second.type;
         return type == "arr_char" || type == "ptr_char";
     }
-    size_t pos = str.find('[');
-    if (pos != std::string::npos)
-    {
-        std::string type = symTable.find(str.substr(0, pos))->second.type;
-        return type == "arr_char" || type == "ptr_char";
-    }
     return symTable.find(str)->second.type == "var_char";
 }
 
@@ -780,13 +736,6 @@ std::string ASGenerator::getSymbolType(const std::string &str) const
     if (str[0] == '*')
     {
         std::string type = symTable.find(str.substr(1))->second.type;
-        std::string data_type = type.substr(type.find('_'));
-        return "var" + data_type;
-    }
-    size_t pos = str.find('[');
-    if (pos != std::string::npos)
-    {
-        std::string type = symTable.find(str.substr(0, pos))->second.type;
         std::string data_type = type.substr(type.find('_'));
         return "var" + data_type;
     }

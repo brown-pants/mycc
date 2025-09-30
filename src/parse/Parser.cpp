@@ -625,7 +625,7 @@ void Parser::initTable()
           *        ->      { * <factor> }
           !        ->      { ! <factor> }
           -        ->      { - <factor> }
-          &        ->      { & id <id_tail> }
+          &        ->      { & <factor> }
           id       ->      { id <id_tail> }
           num      ->      { num }
     */
@@ -633,7 +633,7 @@ void Parser::initTable()
     ASTable[factor][Token::Mult]                                 = { Item{Token::Mult, Vt}, Item{factor, Vn} };                                       // *        ->      { * <factor> }
     ASTable[factor][Token::Not]                                  = { Item{Token::Not, Vt}, Item{factor, Vn} };                                        // !        ->      { ! <factor> }
     ASTable[factor][Token::Minus]                                = { Item{Token::Minus, Vt}, Item{factor, Vn} };                                      // -        ->      { - <factor> }
-    ASTable[factor][Token::Ampersand]                            = { Item{Token::Ampersand, Vt}, Item{Token::Identifier, Vt}, Item{id_tail, Vn} };    // &        ->      { & id <id_tail> }
+    ASTable[factor][Token::Ampersand]                            = { Item{Token::Ampersand, Vt}, Item{factor, Vn} };                                  // &        ->      { & <factor> }
     ASTable[factor][Token::Identifier]                           = { Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                // id       ->      { id <id_tail> }
     ASTable[factor][Token::Integer]                              = { Item{Token::Integer, Vt} };                                                      // num      ->      { num }
     ASTable[factor][Token::Character]                            = { Item{Token::Character, Vt} };

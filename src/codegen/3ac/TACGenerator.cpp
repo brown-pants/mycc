@@ -116,7 +116,6 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             {
                 Debug::InitialNotConstant(dec_tail.tokens[0]);
                 m_hasError = true;
-                break;
             }
              // dec ptr
             if (isPointer)
@@ -137,7 +136,6 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 // Sorry, pointer arrays are not currently supported.
                 m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
-                break;
             }
             // dec arr
             const Token &num = dec_tail.tokens[1];
@@ -151,7 +149,6 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 Token ptrType(type.type(), type.lexeme() + "*", type.line());
                 Debug::TypeError(ptrType);
                 m_hasError = true;
-                break;
             }
             // dec func
             dec_function(type, isPointer, id, dec_tail);
@@ -227,7 +224,6 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 // Sorry, pointer arrays are not currently supported.
                 m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
-                break;
             }
             const Token &num = var_dec_tail.tokens[1];
             dec_var(true, type, id, "", "arr", std::stoll(num.lexeme()));
@@ -774,7 +770,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
         }
         return temp1;
     }
-    /* <factor> -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | num */
+    /* <factor> -> ( <expression> ) | id <id_tail> | & <factor> | * <factor> | num */
     else if (node.vn_type == Parser::factor)
     {
         /* <factor> -> ( <expression> ) */
@@ -790,13 +786,30 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Parser::TreeNode &id_tail = node.childs[0];
             return do_id_tail(id_tail, id);
         }
-        /* <factor> -> & id <id_tail> */
+        /* <factor> -> & <factor> */
         else if (node.tokens[0].type() == Token::Ampersand)
         {
             const Token &ampersand = node.tokens[0];
-            const Token &id = node.tokens[1];
-            const Parser::TreeNode &id_tail = node.childs[0];
-            return do_id_tail(id_tail, id, ampersand);
+            const Parser::TreeNode &factor = node.childs[0];
+            std::string addr = do_expression(factor);
+            if (addr == "")
+            {
+                return "";
+            }
+            if (isNumber(addr) || getPointerStride(addr) != 0 || addr[0] == '&' || addr.substr(0, 2) == "t^")
+            {
+                Debug::InvalidOperands(ampersand);
+                m_hasError = true;
+                return "";
+            }
+            else if (addr[0] == '*')
+            {
+                return addr.substr(1);
+            }
+            else
+            {
+                return ampersand.lexeme() + addr;
+            }
         }
         /* <factor> -> * <factor> */
         else if (node.tokens[0].type() == Token::Mult)
@@ -808,7 +821,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 return "";
             }
-            if (isNumber(addr) || getPointerStride(addr) == 0 || addr.find('[') != std::string::npos)
+            if (isNumber(addr) || getPointerStride(addr) == 0)
             {
                 Debug::InvalidOperands(star);
                 m_hasError = true;
@@ -870,20 +883,13 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
     return "";
 }
 
-std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Token &id, const Token &ampersand)
+std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Token &id)
 {
-    bool hasAmpersand = (ampersand.type() == Token::Ampersand);
     Symbol *id_sym = getSymbol(id.lexeme());
 
     if (id_sym == nullptr)
     {
         Debug::VarUndefined(id);
-        m_hasError = true;
-        return "";
-    }
-    if (hasAmpersand && id_sym->type == Symbol::Func)
-    {
-        Debug::InvalidOperands(ampersand);
         m_hasError = true;
         return "";
     }
@@ -919,21 +925,11 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
             m_hasError = true;
             return "";
         }
-        if (hasAmpersand && id_sym->type == Symbol::Arr)
+        if (id_sym->type == Symbol::Arr)
         {
-            Debug::DereferencingError(id, "array");
-            m_hasError = true;
-            return "";
+            return '&' + newName;
         }
-
-        if (id_sym->type == Symbol::Arr || hasAmpersand)
-        {
-            return "&" + newName;
-        }
-        else
-        {
-            return newName;
-        }
+        return newName;
     }
     /* <id_tail> -> [ <expression> ] */
     else if (id_tail.tokens[0].type() == Token::OpenSquare)
@@ -946,66 +942,28 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
         }
 
         const Parser::TreeNode &expression = id_tail.childs[0];
-        std::string idx = do_expression(expression);
-
-        if (hasAmpersand)
-        {
-            std::string temp = new_temp();
-            Token::Type type = static_cast<ArrSymbol *>(id_sym)->data_type;
-            unsigned int stride = dataSizeMap[type];
-            pointerTemps.insert(std::pair<std::string, unsigned int>(temp, stride));
-            std::string prefix = (id_sym->type == Symbol::Arr ? "&" : "");
-            if (isNumber(idx))
-            {
-                long long offset = std::stoll(idx) * stride;
-                code.push_back({ Op_add, prefix + newName, std::to_string(offset), temp });
-            }
-            else
-            {
-                std::string offset_temp = new_temp();
-                code.push_back({ Op_mult, idx, std::to_string(stride), offset_temp });
-                code.push_back({ Op_add, prefix + newName, offset_temp, temp });
-            }
-            return temp;
-        }
-        
-        std::string result;
         unsigned int data_size = dataSizeMap[data_type];
-        
+        std::string idx = do_expression(expression);
+        std::string offset_str;
+
         // idx is a num
         if (isNumber(idx))
         {
             long long offset = std::stoll(idx) * data_size;
-            if (id_sym->type == Symbol::Ptr)
-            {
-                std::string ptr_temp = new_temp();
-                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, data_size));
-                code.push_back({ Op_add, newName, std::to_string(offset), ptr_temp });
-                result = "*" + ptr_temp;
-            }
-            else
-            {
-                result = newName + '[' + std::to_string(offset) + ']';
-            }
+            offset_str = std::to_string(offset);
         }
         // idx is a var
         else
         {
-            std::string offset = new_temp();
-            code.push_back({ Op_mult, idx, std::to_string(data_size), offset });
-            if (id_sym->type == Symbol::Ptr)
-            {
-                std::string ptr_temp = new_temp();
-                pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, data_size));
-                code.push_back({ Op_add, newName, offset, ptr_temp });
-                result = "*" + ptr_temp;
-            }
-            else
-            {
-                result = newName + '[' + offset + ']';
-            }
+            offset_str = new_temp();
+            code.push_back({ Op_mult, idx, std::to_string(data_size), offset_str });
         }
-        return result;
+        
+        std::string prefix = (id_sym->type == Symbol::Arr ? "&" : "");
+        std::string ptr_temp = new_temp();
+        pointerTemps.insert(std::pair<std::string, unsigned int>(ptr_temp, data_size));
+        code.push_back({ Op_add, prefix + newName, offset_str, ptr_temp });
+        return "*" + ptr_temp;
     }
     /* <id_tail> -> ( <args> ) */
     else if (id_tail.tokens[0].type() == Token::OpenParen)
