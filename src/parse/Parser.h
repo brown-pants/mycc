@@ -45,7 +45,7 @@ public:
         term,                       //  <term>                      -> <factor> <term_tail>
         term_tail,                  //  <term_tail>                 -> <mulop> <factor> <term_tail> | ~
         mulop,                      //  <mulop>                     -> * | /
-        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | ! <factor> | num
+        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & id <id_tail> | * <factor> | ! <factor> | - <factor> | num
         id_tail,                    //  <id_tail>                   -> ( <args> ) | [ <expression> ] | ~
         args,                       //  <args>                      -> <expression> <arg_tail> | ~
         arg_tail,                   //  <arg_tail>                  -> , <expression> <arg_tail> | ~
@@ -71,17 +71,17 @@ private:
 
     enum ItemType
     {
-        Vn, //Non-terminal Symbols
-        Vt  //Terminal Symbols
+        Vn, // Non-terminal Symbols
+        Vt  // Terminal Symbols
     };
 
     struct Item
     {
-        int item = -1;  //no Vn or Vt in item
+        int item = -1;  // Vn or Vt in item
         ItemType type;
     };
 
-    std::vector<Item> ASTable[39][37];
+    std::vector<Item> ASTable[37][37];
 
     void initTable();
 };

@@ -190,6 +190,9 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             case TACGenerator::Op_not:
             std::cout << code.result << " = ! " << code.arg1 << std::endl;
             break;
+            case TACGenerator::Op_neg:
+            std::cout << code.result << " = - " << code.arg1 << std::endl;
+            break;
             case TACGenerator::Op_add:
             std::cout << code.result << " = " << code.arg1 << " + " << code.arg2 << std::endl;
             break;

@@ -43,6 +43,7 @@ private:
     void assign(const std::string &arg, const std::string &result);
     void call_func(const std::string &params_count, const std::string &return_type, const std::string &func_name);
     void logic_not(const std::string &arg, const std::string &result);
+    void negate(const std::string &arg, const std::string &result);
     void arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
     void relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
 

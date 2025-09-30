@@ -53,6 +53,9 @@ std::string ASGenerator::exec()
         case TACGenerator::Op_not:
             logic_not(code.arg1, code.result);
             break;
+        case TACGenerator::Op_neg:
+            negate(code.arg1, code.result);
+            break;
         case TACGenerator::Op_add:
             arithmetic("+", code.arg1, code.arg2, code.result);
             break;
@@ -333,7 +336,7 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
         bool argOneByte = isOneByteType(arg);
         if (argOneByte)
         {
-            asc += "\tmovsbq " + getVarCode(arg) + ", %rax\n";                  //      movsbq {arg}, %rax
+            asc += "\tmovb " + getVarCode(arg) + ", %al\n";                     //      movb {arg}, %al
         }
         else
         {
@@ -342,6 +345,11 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
         if (resultOneByte)
         {
             asc += "\tmovb %al, " + getVarCode(result, true) + "\n";            //      movb %al, {result}
+        }
+        else if (argOneByte)
+        {
+            asc += "\tmovsbq %al, %rax\n";                                      //      movsbq %al, %rax
+            asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";           //      movq %rax, {result}
         }
         else
         {
@@ -365,28 +373,68 @@ void ASGenerator::logic_not(const std::string &arg, const std::string &result)
         dec_local_var(result, "1", "var_char");
     }
 
-    std::string result_code = symTable[result].addr;
-    std::string arg_code = symTable[arg].addr;
+    std::string result_code = getVarCode(result, true);
+    std::string arg_code = getVarCode(arg);
     
     if (isOneByteType(arg))
     {
-        asc += "\tmovb " + arg_code + ", %al\n";     //  movb {arg}, %al
-        asc += "\txorb $1, %al\n";              //  xorb $1, %al
+        asc += "\tmovb " + arg_code + ", %al\n";        //  movb {arg}, %al
+        asc += "\ttestb %al, %al\n";                    //  testb %al, %al
+        asc += "\tsetz %al\n";                          //  setz %al
     }
     else
     {
-        asc += "\tmovq " + arg_code + ", %rax\n";    //  movq {arg}, %rax
-        asc += "\ttestq %rax, %rax\n";          //  testq %rax, %rax
-        asc += "\tsetz %al\n";                  //  setz %al
+        asc += "\tmovq " + arg_code + ", %rax\n";       //  movq {arg}, %rax
+        asc += "\ttestq %rax, %rax\n";                  //  testq %rax, %rax
+        asc += "\tsetz %al\n";                          //  setz %al
     }
     if (isOneByteType(result))
     {
-        asc += "\tmovb %al, " + result_code + "\n";  //  movb %al, {result}
+        asc += "\tmovb %al, " + result_code + "\n";     //  movb %al, {result}
     }
     else
     {
-        asc += "\tmovzbq %al, %rax\n";          //  movzbq %al, %rax
-        asc += "\tmovq %rax, " + result_code + "\n"; //  movq %rax, {result}
+        asc += "\tmovzbq %al, %rax\n";                  //  movzbq %al, %rax
+        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
+    }
+}
+
+void ASGenerator::negate(const std::string &arg, const std::string &result)
+{
+    // undefined temp
+    if (result.substr(0, 2) == "t^")
+    {
+        dec_local_var(result, "8", "var_int");
+    }
+
+    std::string result_code = getVarCode(result, true);
+    std::string arg_code = getVarCode(arg);
+
+    bool isArgOneByte = isOneByteType(arg);
+    bool isResultOneByte = isOneByteType(result);
+    
+    if (isArgOneByte)
+    {
+        asc += "\tmovb " + arg_code + ", %al\n";        //  movb {arg}, %al
+        asc += "\tnegb %al\n";                          //  negb %al
+    }
+    else
+    {
+        asc += "\tmovq " + arg_code + ", %rax\n";       //  movq {arg}, %rax
+        asc += "\tnegq %rax\n";                         //  negq %rax
+    }
+    if (isResultOneByte)
+    {
+        asc += "\tmovb %al, " + result_code + "\n";     //  movb %al, {result}
+    }
+    else if (isArgOneByte)
+    {
+        asc += "\tmovsbq %al, %rax\n";                  //  movsbq %al, %rax
+        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
+    }
+    else
+    {
+        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
     }
 }
 

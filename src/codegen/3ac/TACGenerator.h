@@ -25,6 +25,7 @@ public:
         Op_assign,      // result = arg1
         Op_call_func,   // arg1 = paramsCount, arg2 = returnType, result = funcName
         Op_not,         // result = !arg1
+        Op_neg,         // result = -arg1
         Op_add,         // result = arg1 + arg2
         Op_sub,         // result = arg1 - arg2
         Op_mult,        // result = arg1 * arg2

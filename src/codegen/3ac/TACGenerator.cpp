@@ -837,6 +837,25 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             code.push_back({ Op_not, var, "", temp });
             return temp;
         }
+        /* <factor> -> - <factor> */
+        else if (node.tokens[0].type() == Token::Minus)
+        {
+            const Parser::TreeNode &factor = node.childs[0];
+            std::string var = do_expression(factor);
+            if (getPointerStride(var) != 0)
+            {
+                Debug::InvalidOperands(node.tokens[0]);
+                m_hasError = true;
+            }
+            if (isNumber(var))
+            {
+                long long result = -std::stoll(var);
+                return std::to_string(result);
+            }
+            std::string temp = new_temp();
+            code.push_back({ Op_neg, var, "", temp });
+            return temp;
+        }
         /* <factor> -> num */
         else
         {
