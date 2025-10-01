@@ -14,20 +14,18 @@ public:
     {
         program,                    //  <program>                   -> <declaration_list>
         declaration_list,           //  <declaration_list>          -> <declaration> <declaration_list> | ~
-        declaration,                //  <declaration>               -> type <determine_pointer>
-        determine_pointer,          //  <determine_pointer>         -> * id <dec_tail> | id <dec_tail>
+        declaration,                //  <declaration>               -> type <is_pointer> id <dec_tail>
+        is_pointer,                 //  <is_pointer>                -> * | ~
         dec_tail,                   //  <dec_tail>                  -> ; | = <expression> ; | [ num ] ; | ( <params> ) <compound_stmt>
         params,                     //  <params>                    -> <param> <params_tail> | ~
-        param,                      //  <param>                     -> type <param_determine_pointer>
-        param_determine_pointer,    //  <param_determine_pointer>   -> * id | id
+        param,                      //  <param>                     -> type <is_pointer> id
         params_tail,                //  <params_tail>               -> , <param> <params_tail> | ~
         statement,                  //  <statement>                 -> <expression_stmt> | <compound_stmt> | <selection_stmt> | <iteration_stmt> | <return_stmt>
         expression_stmt,            //  <expression_stmt>           -> <expression> ; | ;
         compound_stmt,              //  <compound_stmt>             -> { <compound_list> }
         compound_list,              //  <compound_list>             -> <compound> <compound_list> | ~
         compound,                   //  <compound>                  -> <var_dec> | <statement>
-        var_dec,                    //  <var_dec>                   -> type <var_determine_pointer> ;
-        var_determine_pointer,      //  <var_determine_pointer>     -> * id <var_dec_tail> | id <var_dec_tail>
+        var_dec,                    //  <var_dec>                   -> type <is_pointer> id <var_dec_tail> ;
         var_dec_tail,               //  <var_dec_tail>              -> [ num ] | <determine_assign>
         selection_stmt,             //  <selection_stmt>            -> if ( <expression> ) <statement> <else_part>
         else_part,                  //  <else_part>                 -> else <statement> | ~
@@ -81,7 +79,7 @@ private:
         ItemType type;
     };
 
-    std::vector<Item> ASTable[37][37];
+    std::vector<Item> ASTable[35][37];
 
     void initTable();
 };

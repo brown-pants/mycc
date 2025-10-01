@@ -72,26 +72,15 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         }
         break;
     }
-    /* <declaration> -> type <determine_pointer> */
+    /* <declaration> -> type <is_pointer> id <dec_tail> */
     case Parser::declaration:
     {
         const Token &type = node.tokens[0];
-        const Parser::TreeNode &determine_pointer = node.childs[0];
-        bool isPointer;
-        Token id;
-        /* <determine_pointer> -> * id <dec_tail> */
-        if (determine_pointer.tokens[0].type() == Token::Mult)
-        {
-            isPointer = true;
-            id = determine_pointer.tokens[1];
-        }
-        /* <determine_pointer> -> id <dec_tail> */
-        else
-        {
-            isPointer = false;
-            id = determine_pointer.tokens[0];
-        }
-        const Parser::TreeNode &dec_tail = determine_pointer.childs[0];
+        const Token &id = node.tokens[1];
+        const Parser::TreeNode &is_pointer = node.childs[0];
+        const Parser::TreeNode &dec_tail = node.childs[1];
+        /* <is_pointer> -> * | ~ */
+        bool isPointer = (is_pointer.tokens.empty() ? false : true);
         /* <dec_tail> -> ; */
         if (dec_tail.tokens[0].type() == Token::Semicolon)
         {
@@ -166,26 +155,15 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         scopeStack.pop();
         break;
     }
-    /* <var_dec> -> type <var_determine_pointer> ; */
+    /* <var_dec> -> type <is_pointer> id <var_dec_tail> ; */
     case Parser::var_dec:
     {
         const Token &type = node.tokens[0];
-        const Parser::TreeNode &var_determine_pointer = node.childs[0];
-        bool isPointer;
-        Token id;
-        /* <var_determine_pointer> -> * id <var_dec_tail> */
-        if (var_determine_pointer.tokens[0].type() == Token::Mult)
-        {
-            isPointer = true;
-            id = var_determine_pointer.tokens[1];
-        }
-        /* <var_determine_pointer> -> id <var_dec_tail> */
-        else
-        {
-            isPointer = false;
-            id = var_determine_pointer.tokens[0];
-        }
-        const Parser::TreeNode &var_dec_tail = var_determine_pointer.childs[0];
+        const Token &id = node.tokens[1];
+        const Parser::TreeNode &is_pointer = node.childs[0];
+        const Parser::TreeNode &var_dec_tail = node.childs[1];
+        /* <is_pointer> -> * | ~ */
+        bool isPointer = (is_pointer.tokens.empty() ? false : true);
         /* <var_dec_tail> -> ~ */
         if (var_dec_tail.tokens.empty())
         {
@@ -410,27 +388,16 @@ void TACGenerator::dec_function(const Token &type, bool returnPointer, const Tok
 
 void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type)
 {
-    /* <param> -> type <param_determine_pointer> */
+    /* <param> -> type <is_pointer> id */
     if (node.vn_type == Parser::param)
     {
-        Token type = node.tokens[0];
-        const Parser::TreeNode &param_determine_pointer = node.childs[0];
-        bool isPointer;
-        Token id;
-        /* <param_determine_pointer> -> * id */
-        if (param_determine_pointer.tokens[0].type() == Token::Mult)
-        {
-            isPointer = true;
-            id = param_determine_pointer.tokens[1];
-        }
-        /* <param_determine_pointer> -> id */
-        else
-        {
-            isPointer = false;
-            id = param_determine_pointer.tokens[0];
-        }
-        std::string varName = id.lexeme();
+        const Token &type = node.tokens[0];
+        const Token &id = node.tokens[1];
+        const Parser::TreeNode &is_pointer = node.childs[0];
+        /* <is_pointer> -> * | ~ */
+        bool isPointer = (is_pointer.tokens.empty() ? false : true);
 
+        std::string varName = id.lexeme();
         if (type.type() == Token::Void)
         {
             Debug::TypeError(type);
@@ -792,10 +759,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Token &ampersand = node.tokens[0];
             const Parser::TreeNode &factor = node.childs[0];
             std::string addr = do_expression(factor);
-            if (addr == "")
-            {
-                return "";
-            }
             if (isNumber(addr) || getPointerStride(addr) != 0 || addr[0] == '&' || addr.substr(0, 2) == "t^")
             {
                 Debug::InvalidOperands(ampersand);
@@ -817,10 +780,6 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Token &star = node.tokens[0];
             const Parser::TreeNode &factor = node.childs[0];
             std::string addr = do_expression(factor);
-            if (addr == "")
-            {
-                return "";
-            }
             if (isNumber(addr) || getPointerStride(addr) == 0)
             {
                 Debug::InvalidOperands(star);
@@ -1034,8 +993,8 @@ bool TACGenerator::isNumber(const std::string &str) const
 
 unsigned int TACGenerator::getPointerStride(const std::string &str) const
 {
-    // num or *ptr
-    if (isNumber(str) || str[0] == '*')
+    // num or *ptr or null
+    if (isNumber(str) || str[0] == '*' || str == "")
     {
         return 0;
     }
