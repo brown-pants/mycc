@@ -620,14 +620,8 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 }
                 temp1 = std::to_string(num);
             }
-            // Both of arg1 and arg2 is pointer
-            else if (pointerStride_1 && pointerStride_2)
-            {
-                Debug::InvalidOperands(addop.tokens[0]);
-                m_hasError = true;
-            }
-            // var - pointer
-            else if (op == Op_sub && !pointerStride_1 && pointerStride_2)
+            // Both of arg1 and arg2 is pointer or A - pointer
+            else if (pointerStride_1 && pointerStride_2 || op == Op_sub && pointerStride_2)
             {
                 Debug::InvalidOperands(addop.tokens[0]);
                 m_hasError = true;
