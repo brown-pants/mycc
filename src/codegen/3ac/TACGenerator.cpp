@@ -626,6 +626,12 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 Debug::InvalidOperands(addop.tokens[0]);
                 m_hasError = true;
             }
+            // var - pointer
+            else if (op == Op_sub && !pointerStride_1 && pointerStride_2)
+            {
+                Debug::InvalidOperands(addop.tokens[0]);
+                m_hasError = true;
+            }
             // Either arg1 or agr2 is pointer
             else if (pointerStride_1 || pointerStride_2)
             {
@@ -652,14 +658,14 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 if (isNumber(idx))
                 {
                     long long offset = std::stoll(idx) * stride;
-                    code.push_back({ Op_add, ptr, std::to_string(offset), temp });
+                    code.push_back({ op, ptr, std::to_string(offset), temp });
                 }
                 // idx is var
                 else
                 {
                     std::string offset_temp = new_temp();
                     code.push_back({ Op_mult, idx, std::to_string(stride), offset_temp });
-                    code.push_back({ Op_add, ptr, offset_temp, temp });
+                    code.push_back({ op, ptr, offset_temp, temp });
                 }
                 temp1 = temp;
             }
