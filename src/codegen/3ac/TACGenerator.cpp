@@ -463,23 +463,27 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
     {
         const Parser::TreeNode &relational_expression = node.childs[0];
         const Parser::TreeNode *expression_tail = &node.childs[1];
-        std::string left_value = do_expression(relational_expression);
-        std::stack<std::string> assign_stack;
-        assign_stack.push(left_value);
+        std::stack<const Parser::TreeNode *> assign_stack;
+        assign_stack.push(&relational_expression);
         /* <expression_tail> -> = <relational_expression> <expression_tail> | ~ */
         const Token &eq_token = expression_tail->tokens[0];
         while (!expression_tail->childs.empty())
         {
             const Parser::TreeNode &relational_expression = expression_tail->childs[0];
-            assign_stack.push(do_expression(relational_expression));
+            assign_stack.push(&relational_expression);
             expression_tail = &expression_tail->childs[1];
         }
-        while (assign_stack.size() > 1)
+        std::string right_value = "";
+        while (assign_stack.size() > 0)
         {
-            std::string right_value = assign_stack.top();
+            const Parser::TreeNode &expression = *assign_stack.top();
             assign_stack.pop();
-            left_value = assign_stack.top();
-            assign_stack.pop();
+            std::string left_value = do_expression(expression);
+            if (right_value == "")
+            {
+                right_value = left_value;
+                continue;
+            }
             if (left_value == "")
             {
                 return "";
@@ -491,9 +495,9 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 return "";
             }
             code.push_back({ Op_assign, right_value, "", left_value});
-            assign_stack.push(left_value);
+            right_value = left_value;
         }
-        return left_value;
+        return right_value;
     }
     /* <relational_expression> -> <additive_expression> <relational_expression_tail> */
     else if (node.vn_type == Parser::relational_expression)
@@ -652,7 +656,14 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 if (isNumber(idx))
                 {
                     long long offset = std::stoll(idx) * stride;
-                    code.push_back({ op, ptr, std::to_string(offset), temp });
+                    if (offset == 0)
+                    {
+                        code.push_back({ Op_assign, ptr, "", temp });
+                    }
+                    else
+                    {
+                        code.push_back({ op, ptr, std::to_string(offset), temp });
+                    }
                 }
                 // idx is var
                 else
@@ -664,6 +675,20 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 temp1 = temp;
             }
             // Neither arg1 nor agr2 is pointer
+            else if (temp1 == "0" && op == Op_add)
+            {
+                temp1 = temp2;
+            }
+            else if (temp1 == "0" && op == Op_sub)
+            {
+                std::string temp3 = new_temp();
+                code.push_back({ Op_neg, temp2, "", temp3 });
+                temp1 = temp3;
+            }
+            else if (temp2 == "0")
+            {
+                continue;
+            }
             else
             {
                 std::string temp3 = new_temp();
@@ -727,6 +752,34 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 Debug::InvalidOperands(mulop.tokens[0]);
                 m_hasError = true;
+            }
+            else if (op == Op_mult && (temp1 == "0" || temp2 == "0"))
+            {
+                temp1 = "0";
+            }
+            else if (op == Op_mult && temp1 == "1")
+            {
+                temp1 = temp2;
+            }
+            else if (op == Op_mult && temp1 == "-1")
+            {
+                std::string temp3 = new_temp();
+                code.push_back({ Op_neg, temp2, "", temp3 });
+                temp1 = temp3;
+            }
+            else if ((op == Op_mult || op == Op_div) && temp2 == "1")
+            {
+                continue;
+            }
+            else if ((op == Op_mult || op == Op_div) && temp2 == "-1")
+            {
+                std::string temp3 = new_temp();
+                code.push_back({ Op_neg, temp1, "", temp3 });
+                temp1 = temp3;
+            }
+            else if (op == Op_mod && (temp2 == "1" || temp2 == "-1"))
+            {
+                temp1 = "0";
             }
             else
             {
@@ -909,6 +962,10 @@ std::string TACGenerator::do_id_tail(const Parser::TreeNode &id_tail, const Toke
         if (isNumber(idx))
         {
             long long offset = std::stoll(idx) * data_size;
+            if (offset == 0)
+            {
+                return id_sym->type == Symbol::Arr ? newName : "*" + newName;
+            }
             offset_str = std::to_string(offset);
         }
         // idx is a var
@@ -1037,19 +1094,21 @@ unsigned int TACGenerator::getPointerStride(const std::string &str) const
     // &var
     if (sign)
     {
-        Token::Type type = static_cast<VarSymbol *>(sym)->data_type;
+        Token::Type type;
+        if (sym->type == Symbol::Arr)
+        {
+            type = static_cast<ArrSymbol *>(sym)->data_type;
+        }
+        else
+        {
+            type = static_cast<VarSymbol *>(sym)->data_type;
+        }
         return dataSizeMap.find(type)->second;
     }
     // pointer
     else if (sym->type == Symbol::Ptr)
     {
         Token::Type type = static_cast<PtrSymbol *>(sym)->data_type;
-        return dataSizeMap.find(type)->second;
-    }
-    // array
-    else if (sym->type == Symbol::Arr)
-    {
-        Token::Type type = static_cast<ArrSymbol *>(sym)->data_type;
         return dataSizeMap.find(type)->second;
     }
     // var
