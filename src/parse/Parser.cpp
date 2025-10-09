@@ -84,7 +84,7 @@ Parser::TreeNode Parser::exec()
 
 bool Parser::hasError() const
 {
-      return m_hasError;
+    return m_hasError;
 }
 
 void Parser::initTable()
@@ -393,38 +393,109 @@ void Parser::initTable()
     ASTable[return_tail][Token::OpenParen]                       = { Item{expression, Vn} };     // (        ->      { <expression> }
 
     /*<expression>:
-          !        ->      { <relational_expression> <expression_tail> }
-          -        ->      { <relational_expression> <expression_tail> }
-          *        ->      { <relational_expression> <expression_tail> }
-          &        ->      { <relational_expression> <expression_tail> }
-          id       ->      { <relational_expression> <expression_tail> }
-          num      ->      { <relational_expression> <expression_tail> }
-          (        ->      { <relational_expression> <expression_tail> }
+          !        ->      { <or_expression> <expression_tail> }
+          -        ->      { <or_expression> <expression_tail> }
+          *        ->      { <or_expression> <expression_tail> }
+          &        ->      { <or_expression> <expression_tail> }
+          id       ->      { <or_expression> <expression_tail> }
+          num      ->      { <or_expression> <expression_tail> }
+          (        ->      { <or_expression> <expression_tail> }
     */
-    ASTable[expression][Token::Not]                              = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // !        ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Minus]                            = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // -        ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Mult]                             = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // *        ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Ampersand]                        = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // &        ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Identifier]                       = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // id       ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Integer]                          = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // num      ->      { <relational_expression> <expression_tail> }
-    ASTable[expression][Token::Character]                        = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };
-    ASTable[expression][Token::Float]                            = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };
-    ASTable[expression][Token::String]                           = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };
-    ASTable[expression][Token::OpenParen]                        = { Item{relational_expression, Vn}, Item{expression_tail, Vn} };         // (        ->      { <relational_expression> <expression_tail> }
+    ASTable[expression][Token::Not]                              = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // !        ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Minus]                            = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // -        ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Mult]                             = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // *        ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Ampersand]                        = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // &        ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Identifier]                       = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // id       ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Integer]                          = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // num      ->      { <or_expression> <expression_tail> }
+    ASTable[expression][Token::Character]                        = { Item{or_expression, Vn}, Item{expression_tail, Vn} };
+    ASTable[expression][Token::Float]                            = { Item{or_expression, Vn}, Item{expression_tail, Vn} };
+    ASTable[expression][Token::String]                           = { Item{or_expression, Vn}, Item{expression_tail, Vn} };
+    ASTable[expression][Token::OpenParen]                        = { Item{or_expression, Vn}, Item{expression_tail, Vn} };         // (        ->      { <or_expression> <expression_tail> }
 
     /*<expression_tail>:
           ;        ->      { ~ }
           ]        ->      { ~ }
           )        ->      { ~ }
           ,        ->      { ~ }
-          =        ->      { = <relational_expression> <expression_tail> }
+          =        ->      { = <or_expression> <expression_tail> }
     */
+    ASTable[expression_tail][Token::Semicolon]                   = { Item{Token::Nul, Vt} };                                                          // ;        ->      { ~ }        
+    ASTable[expression_tail][Token::CloseSquare]                 = { Item{Token::Nul, Vt} };                                                          // ]        ->      { ~ }
+    ASTable[expression_tail][Token::CloseParen]                  = { Item{Token::Nul, Vt} };                                                          // )        ->      { ~ }
+    ASTable[expression_tail][Token::Comma]                       = { Item{Token::Nul, Vt} };                                                          // ,        ->      { ~ }
+    ASTable[expression_tail][Token::Eq]                          = { Item{Token::Eq, Vt}, Item{or_expression, Vn}, Item{expression_tail, Vn} };       // =        ->      { = <or_expression> <expression_tail> }
+    
+    /*<or_expression>:
+          !        ->      { <and_expression> <or_expression_tail> }
+          -        ->      { <and_expression> <or_expression_tail> }
+          *        ->      { <and_expression> <or_expression_tail> }
+          &        ->      { <and_expression> <or_expression_tail> }
+          id       ->      { <and_expression> <or_expression_tail> }
+          num      ->      { <and_expression> <or_expression_tail> }
+          (        ->      { <and_expression> <or_expression_tail> }
+    */
+    ASTable[or_expression][Token::Not]                              = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // !        ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Minus]                            = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // -        ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Mult]                             = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // *        ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Ampersand]                        = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // &        ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Identifier]                       = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // id       ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Integer]                          = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // num      ->      { <and_expression> <or_expression_tail> }
+    ASTable[or_expression][Token::Character]                        = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };
+    ASTable[or_expression][Token::Float]                            = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };
+    ASTable[or_expression][Token::String]                           = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };
+    ASTable[or_expression][Token::OpenParen]                        = { Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // (        ->      { <and_expression> <or_expression_tail> }
 
-    ASTable[expression_tail][Token::Semicolon]                   = { Item{Token::Nul, Vt} };                                                                // ;        ->      { ~ }        
-    ASTable[expression_tail][Token::CloseSquare]                 = { Item{Token::Nul, Vt} };                                                                // ]        ->      { ~ }
-    ASTable[expression_tail][Token::CloseParen]                  = { Item{Token::Nul, Vt} };                                                                // )        ->      { ~ }
-    ASTable[expression_tail][Token::Comma]                       = { Item{Token::Nul, Vt} };                                                                // ,        ->      { ~ }
-    ASTable[expression_tail][Token::Eq]                          = { Item{Token::Eq, Vt}, Item{relational_expression, Vn}, Item{expression_tail, Vn} };     // =        ->      { = <relational_expression> <expression_tail> }
+    /*<or_expression_tail>:
+          ;        ->      { ~ }
+          =        ->      { ~ }
+          ]        ->      { ~ }
+          )        ->      { ~ }
+          ,        ->      { ~ }
+          ||       ->      { || <and_expression> <or_expression_tail> }
+    */
+    ASTable[or_expression_tail][Token::Semicolon]                = { Item{Token::Nul, Vt} };                                                                // ;        ->      { ~ }
+    ASTable[or_expression_tail][Token::Eq]                       = { Item{Token::Nul, Vt} };                                                                // =        ->      { ~ }
+    ASTable[or_expression_tail][Token::CloseSquare]              = { Item{Token::Nul, Vt} };                                                                // ]        ->      { ~ }
+    ASTable[or_expression_tail][Token::CloseParen]               = { Item{Token::Nul, Vt} };                                                                // )        ->      { ~ }
+    ASTable[or_expression_tail][Token::Comma]                    = { Item{Token::Nul, Vt} };                                                                // ,        ->      { ~ }
+    ASTable[or_expression_tail][Token::Or]                       = { Item{Token::Or, Vt}, Item{and_expression, Vn}, Item{or_expression_tail, Vn} };         // ||       ->      { || <and_expression> <or_expression_tail> }
+    
+    /*<and_expression>:
+          !        ->      { <relational_expression> <and_expression_tail> }
+          -        ->      { <relational_expression> <and_expression_tail> }
+          *        ->      { <relational_expression> <and_expression_tail> }
+          &        ->      { <relational_expression> <and_expression_tail> }
+          id       ->      { <relational_expression> <and_expression_tail> }
+          num      ->      { <relational_expression> <and_expression_tail> }
+          (        ->      { <relational_expression> <and_expression_tail> }
+    */
+    ASTable[and_expression][Token::Not]                              = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // !        ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Minus]                            = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // -        ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Mult]                             = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // *        ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Ampersand]                        = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // &        ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Identifier]                       = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // id       ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Integer]                          = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // num      ->      { <relational_expression> <and_expression_tail> }
+    ASTable[and_expression][Token::Character]                        = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };
+    ASTable[and_expression][Token::Float]                            = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };
+    ASTable[and_expression][Token::String]                           = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };
+    ASTable[and_expression][Token::OpenParen]                        = { Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };         // (        ->      { <relational_expression> <and_expression_tail> }
+
+    /*<and_expression_tail>:
+          ;        ->      { ~ }
+          =        ->      { ~ }
+          ]        ->      { ~ }
+          )        ->      { ~ }
+          ,        ->      { ~ }
+          ||       ->      { ~ }
+          &&       ->      { && <relational_expression> <and_expression_tail> }
+    */
+    ASTable[and_expression_tail][Token::Semicolon]                = { Item{Token::Nul, Vt} };                                                                     // ;        ->      { ~ }
+    ASTable[and_expression_tail][Token::Eq]                       = { Item{Token::Nul, Vt} };                                                                     // =        ->      { ~ }
+    ASTable[and_expression_tail][Token::CloseSquare]              = { Item{Token::Nul, Vt} };                                                                     // ]        ->      { ~ }
+    ASTable[and_expression_tail][Token::CloseParen]               = { Item{Token::Nul, Vt} };                                                                     // )        ->      { ~ }
+    ASTable[and_expression_tail][Token::Comma]                    = { Item{Token::Nul, Vt} };                                                                     // ,        ->      { ~ }
+    ASTable[and_expression_tail][Token::Or]                       = { Item{Token::Nul, Vt} };                                                                     // ||       ->      { ~ }
+    ASTable[and_expression_tail][Token::And]                      = { Item{Token::And, Vt}, Item{relational_expression, Vn}, Item{and_expression_tail, Vn} };     // &&       ->      { && <relational_expression> <and_expression_tail> }
     
     /*<relational_expression>:
           !        ->      { <additive_expression> <relational_expression_tail> }
@@ -452,6 +523,8 @@ void Parser::initTable()
           )        ->      { ~ }
           ,        ->      { ~ }
           =        ->      { ~ }
+          ||       ->      { ~ }
+          &&       ->      { ~ }
           <=       ->      { <relop> <additive_expression> <relational_expression_tail> }
           <        ->      { <relop> <additive_expression> <relational_expression_tail> }
           >        ->      { <relop> <additive_expression> <relational_expression_tail> }
@@ -464,6 +537,8 @@ void Parser::initTable()
     ASTable[relational_expression_tail][Token::CloseParen]                  = { Item{Token::Nul, Vt} };                                                                      // )        ->      { ~ }
     ASTable[relational_expression_tail][Token::Comma]                       = { Item{Token::Nul, Vt} };                                                                      // ,        ->      { ~ }
     ASTable[relational_expression_tail][Token::Eq]                          = { Item{Token::Nul, Vt} };                                                                      // =        ->      { ~ }
+    ASTable[relational_expression_tail][Token::Or]                          = { Item{Token::Nul, Vt} };                                                                      // ||       ->      { ~ }
+    ASTable[relational_expression_tail][Token::And]                         = { Item{Token::Nul, Vt} };                                                                      // &&       ->      { ~ }
     ASTable[relational_expression_tail][Token::Less_Eq]                     = { Item{relop, Vn}, Item{additive_expression, Vn}, Item{relational_expression_tail, Vn} };      // <=       ->      { <relop> <additive_expression> <relational_expression_tail> }
     ASTable[relational_expression_tail][Token::Less]                        = { Item{relop, Vn}, Item{additive_expression, Vn}, Item{relational_expression_tail, Vn} };      // <        ->      { <relop> <additive_expression> <relational_expression_tail> }
     ASTable[relational_expression_tail][Token::Greater]                     = { Item{relop, Vn}, Item{additive_expression, Vn}, Item{relational_expression_tail, Vn} };      // >        ->      { <relop> <additive_expression> <relational_expression_tail> }
@@ -518,6 +593,8 @@ void Parser::initTable()
           >=       ->      { ~ }
           ==       ->      { ~ }
           !=       ->      { ~ }
+          ||       ->      { ~ }
+          &&       ->      { ~ }
           +        ->      { <addop> <term> <additive_expression_tail> }
           -        ->      { <addop> <term> <additive_expression_tail> }
    */
@@ -532,6 +609,8 @@ void Parser::initTable()
     ASTable[additive_expression_tail][Token::Greater_Eq]         = { Item{Token::Nul, Vt} };                                                     // >=       ->      { ~ }
     ASTable[additive_expression_tail][Token::Eq_Eq]              = { Item{Token::Nul, Vt} };                                                     // ==       ->      { ~ }
     ASTable[additive_expression_tail][Token::Not_Eq]             = { Item{Token::Nul, Vt} };                                                     // !=       ->      { ~ }
+    ASTable[additive_expression_tail][Token::Or]                 = { Item{Token::Nul, Vt} };                                                     // ||       ->      { ~ }
+    ASTable[additive_expression_tail][Token::And]                = { Item{Token::Nul, Vt} };                                                     // &&       ->      { ~ }
     ASTable[additive_expression_tail][Token::Plus]               = { Item{addop, Vn}, Item{term, Vn}, Item{additive_expression_tail, Vn} };      // +        ->      { <addop> <term> <additive_expression_tail> }
     ASTable[additive_expression_tail][Token::Minus]              = { Item{addop, Vn}, Item{term, Vn}, Item{additive_expression_tail, Vn} };      // -        ->      { <addop> <term> <additive_expression_tail> }
     
@@ -576,6 +655,8 @@ void Parser::initTable()
           !=       ->      { ~ }
           +        ->      { ~ }
           -        ->      { ~ }
+          ||       ->      { ~ }
+          &&       ->      { ~ }
           *        ->      { <mulop> <factor> <term_tail> }
           /        ->      { <mulop> <factor> <term_tail> }
           %        ->      { <mulop> <factor> <term_tail> }
@@ -593,6 +674,8 @@ void Parser::initTable()
     ASTable[term_tail][Token::Not_Eq]                            = { Item{Token::Nul, Vt} };                                     // !=       ->      { ~ }
     ASTable[term_tail][Token::Plus]                              = { Item{Token::Nul, Vt} };                                     // +        ->      { ~ }
     ASTable[term_tail][Token::Minus]                             = { Item{Token::Nul, Vt} };                                     // -        ->      { ~ }
+    ASTable[term_tail][Token::Or]                                = { Item{Token::Nul, Vt} };                                     // ||       ->      { ~ }
+    ASTable[term_tail][Token::And]                               = { Item{Token::Nul, Vt} };                                     // &&       ->      { ~ }
     ASTable[term_tail][Token::Mult]                              = { Item{mulop, Vn}, Item{factor, Vn}, Item{term_tail, Vn} };   // *        ->      { <mulop> <factor> <term_tail> }
     ASTable[term_tail][Token::Div]                               = { Item{mulop, Vn}, Item{factor, Vn}, Item{term_tail, Vn} };   // /        ->      { <mulop> <factor> <term_tail> }
     ASTable[term_tail][Token::Mod]                               = { Item{mulop, Vn}, Item{factor, Vn}, Item{term_tail, Vn} };   // %        ->      { <mulop> <factor> <term_tail> }
@@ -645,6 +728,8 @@ void Parser::initTable()
           *        ->      { ~ }
           /        ->      { ~ }
           %        ->      { ~ }
+          ||       ->      { ~ }
+          &&       ->      { ~ }
     */
     ASTable[id_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                                // ;        ->      { ~ }
     ASTable[id_tail][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt} };     // [        ->      { [ <expression> ] }
@@ -664,6 +749,8 @@ void Parser::initTable()
     ASTable[id_tail][Token::Mult]                                = { Item{Token::Nul, Vt} };                                                                // *        ->      { ~ }
     ASTable[id_tail][Token::Div]                                 = { Item{Token::Nul, Vt} };                                                                // /        ->      { ~ }
     ASTable[id_tail][Token::Mod]                                 = { Item{Token::Nul, Vt} };                                                                // %        ->      { ~ }
+    ASTable[id_tail][Token::Or]                                  = { Item{Token::Nul, Vt} };                                                                // ||       ->      { ~ }
+    ASTable[id_tail][Token::And]                                 = { Item{Token::Nul, Vt} };                                                                // &&       ->      { ~ }
 
     /*<args>:
           !        ->      { <expression> <arg_tail> }

@@ -32,8 +32,12 @@ public:
         iteration_stmt,             //  <iteration_stmt>            -> while ( <expression> ) <statement> | for ( <expression> ; <expression> ; <expression> ) <statement>
         return_stmt,                //  <return_stmt>               -> return <return_tail> ;
         return_tail,                //  <return_tail>               -> <expression> | ~
-        expression,                 //  <expression>                -> <relational_expression> <expression_tail>
-        expression_tail,            //  <expression_tail>           -> = <relational_expression> <expression_tail> | ~
+        expression,                 //  <expression>                -> <or_expression> <expression_tail>
+        expression_tail,            //  <expression_tail>           -> = <or_expression> <expression_tail> | ~
+        or_expression,              //  <or_expression>             -> <and_expression> <or_expression_tail>
+        or_expression_tail,         //  <or_expression_tail>        -> || <and_expression> <or_expression_tail> | ~
+        and_expression,             //  <and_expression>            -> <relational_expression> <and_expression_tail>
+        and_expression_tail,        //  <and_expression_tail>       -> && <relational_expression> <and_expression_tail> | ~
         relational_expression,      //  <relational_expression>     -> <additive_expression> <relational_expression_tail>
         relational_expression_tail, //  <relational_expression_tail>-> <relop> <additive_expression> <relational_expression_tail> | ~
         relop,                      //  <relop>                     -> <= | < | > | >= | == | !=
@@ -79,7 +83,7 @@ private:
         ItemType type;
     };
 
-    std::vector<Item> ASTable[35][37];
+    std::vector<Item> ASTable[39][39];
 
     void initTable();
 };

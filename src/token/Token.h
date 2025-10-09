@@ -21,9 +21,6 @@ public:
         Div,        //  /
         Mod,        //  %
 
-        /* address */
-        Ampersand,  // &
-
         /* bracket */
         OpenParen,  //  (
         CloseParen, //  )
@@ -48,6 +45,12 @@ public:
 
         Less,       //  <
         Less_Eq,    //  <=
+
+        /* address */
+        Ampersand,  // &
+        /* logic */
+        And,        // &&
+        Or,         // ||
 
         /* id & constant */
         Identifier, //  ( _ | {letter} )( _ | {letter} | {digit} )*

@@ -63,11 +63,6 @@ std::vector<Token> Lexer::exec()
             tokens.push_back(Token(Token::Mod, "%", line));
         break;
 
-        //  &
-        case '&': 
-            tokens.push_back(Token(Token::Ampersand, "&", line));
-        break;
-
         //  (
         case '(': 
             tokens.push_back(Token(Token::OpenParen, "(", line));
@@ -146,6 +141,33 @@ std::vector<Token> Lexer::exec()
             else 
             {
                 tokens.push_back(Token(Token::Less, "<", line));
+            }
+        break;
+
+        //  &   &&
+        case '&': 
+            if (peek_next() == '&')
+            {
+                tokens.push_back(Token(Token::And, "&&", line));
+                pos ++;
+            }
+            else
+            {
+                tokens.push_back(Token(Token::Ampersand, "&", line));
+            }
+        break;
+
+        // ||
+        case '|':
+            if (peek_next() == '|')
+            {
+                tokens.push_back(Token(Token::Or, "||", line));
+                pos ++;
+            }
+            else
+            {
+                Debug::LexicalError(Token(Token::Identifier, std::string() + ch, line));
+                m_hasError = true;
             }
         break;
 

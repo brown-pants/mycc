@@ -3,7 +3,7 @@
 #include "../../debug/Debug.h"
 
 TACGenerator::TACGenerator(const Parser::TreeNode &root)
-    : root(root), temp_counter(0U), lable_counter(0U), scope_counter(0U), m_hasError(false),
+    : root(root), temp_counter(0U), label_counter(0U), scope_counter(0U), m_hasError(false),
     dataSizeMap
     ({
         { Token::DT_int, 8 },
@@ -31,9 +31,9 @@ std::string TACGenerator::new_temp()
     return std::string("t^") + std::to_string(temp_counter ++);
 }
 
-std::string TACGenerator::new_lable()
+std::string TACGenerator::new_label()
 {
-    return std::string(".lable") + std::to_string(lable_counter ++);
+    return std::string(".lable") + std::to_string(label_counter ++);
 }
 
 Symbol *TACGenerator::getSymbol(const std::string &symbol_name)
@@ -230,23 +230,23 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             else_statement = &else_part.childs[0];
         }
         std::string condition = do_expression(expression);
-        std::string lable1 = new_lable();
-        std::string lable2 = new_lable();
-        code.push_back({ Op_if, condition, "", lable1});    // if (contidion) goto L1
-        code.push_back({ Op_goto, "", "", lable2});         // goto L2
-        code.push_back({ Op_label, "", "", lable1});        // L1:
+        std::string label1 = new_label();
+        std::string label2 = new_label();
+        code.push_back({ Op_if, condition, "", label1});    // if (contidion) goto L1
+        code.push_back({ Op_goto, "", "", label2});         // goto L2
+        code.push_back({ Op_label, "", "", label1});        // L1:
         generate_3ac(statement);                            // statements
         if (else_statement)
         {// else
-            std::string lable3 = new_lable();
-            code.push_back({ Op_goto, "", "", lable3});     // goto L3
-            code.push_back({ Op_label, "", "", lable2});    // L2:
+            std::string label3 = new_label();
+            code.push_back({ Op_goto, "", "", label3});     // goto L3
+            code.push_back({ Op_label, "", "", label2});    // L2:
             generate_3ac(*else_statement);                  // else_statement
-            code.push_back({ Op_label, "", "", lable3});    // L3:
+            code.push_back({ Op_label, "", "", label3});    // L3:
         }
         else
         {// no else part
-            code.push_back({ Op_label, "", "", lable2});    // L2:
+            code.push_back({ Op_label, "", "", label2});    // L2:
         }
         break;
     }
@@ -260,25 +260,25 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             condition_node = &node.childs[1];
         }
         const Parser::TreeNode &statement = is_for ? node.childs[3] : node.childs[1];
-        std::string lable1 = new_lable();
-        std::string lable2 = new_lable();
-        std::string lable3 = new_lable();
+        std::string label1 = new_label();
+        std::string label2 = new_label();
+        std::string label3 = new_label();
         if (is_for)
         {
             do_expression(node.childs[0]);
         }
-        code.push_back({ Op_label, "", "", lable1 });       // L1:
+        code.push_back({ Op_label, "", "", label1 });       // L1:
         std::string condition = do_expression(*condition_node);
-        code.push_back({ Op_if, condition, "", lable2 });   // if (condition) goto L2
-        code.push_back({ Op_goto, "", "", lable3 });        // goto L3
-        code.push_back({ Op_label, "", "", lable2 });       // L2:
+        code.push_back({ Op_if, condition, "", label2 });   // if (condition) goto L2
+        code.push_back({ Op_goto, "", "", label3 });        // goto L3
+        code.push_back({ Op_label, "", "", label2 });       // L2:
         generate_3ac(statement);                            // do statement
         if (is_for)
         {
             do_expression(node.childs[2]);
         }
-        code.push_back({ Op_goto, "", "", lable1 });        // goto L1
-        code.push_back({ Op_label, "", "", lable3 });       // L3:
+        code.push_back({ Op_goto, "", "", label1 });        // goto L1
+        code.push_back({ Op_label, "", "", label3 });       // L3:
         break;
     }
     /* <return_stmt> -> return <return_tail> ; */
@@ -350,7 +350,7 @@ void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const
                 code.push_back({ Op_local_var, size, sym_type, newName });
                 if (value != "")
                 {
-                    code.push_back({ Op_assign, value, "", newName});
+                    code.push_back({ Op_assign, value, "", newName });
                 }
             }
             else if (value != "")
@@ -458,19 +458,19 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
 
 std::string TACGenerator::do_expression(const Parser::TreeNode &node)
 {
-    /* <expression> -> <relational_expression> <expression_tail> */
+    /* <expression> -> <or_expression> <expression_tail> */
     if (node.vn_type == Parser::expression)
     {
-        const Parser::TreeNode &relational_expression = node.childs[0];
+        const Parser::TreeNode &or_expression = node.childs[0];
         const Parser::TreeNode *expression_tail = &node.childs[1];
         std::stack<const Parser::TreeNode *> assign_stack;
-        assign_stack.push(&relational_expression);
-        /* <expression_tail> -> = <relational_expression> <expression_tail> | ~ */
+        assign_stack.push(&or_expression);
+        /* <expression_tail> -> = <or_expression> <expression_tail> | ~ */
         const Token &eq_token = expression_tail->tokens[0];
         while (!expression_tail->childs.empty())
         {
-            const Parser::TreeNode &relational_expression = expression_tail->childs[0];
-            assign_stack.push(&relational_expression);
+            const Parser::TreeNode &or_expression = expression_tail->childs[0];
+            assign_stack.push(&or_expression);
             expression_tail = &expression_tail->childs[1];
         }
         std::string right_value = "";
@@ -494,10 +494,132 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 m_hasError = true;
                 return "";
             }
-            code.push_back({ Op_assign, right_value, "", left_value});
+            code.push_back({ Op_assign, right_value, "", left_value });
             right_value = left_value;
         }
         return right_value;
+    }
+    /* <or_expression> -> <and_expression> <or_expression_tail> */
+    else if (node.vn_type == Parser::or_expression)
+    {
+        const Parser::TreeNode &and_expression = node.childs[0];
+        const Parser::TreeNode *or_expression_tail = &node.childs[1];
+        std::string value = do_expression(and_expression);
+        /* <or_expression_tail> -> || <and_expression> <or_expression_tail> | ~ */
+        if (or_expression_tail->childs.empty())
+        {
+            return value;
+        }
+
+        std::string lable_true = new_label();
+        std::string lable_false = new_label();
+        std::string lable_end = new_label();
+        bool sign = false;
+
+        while (value != "")
+        {
+            if (isNumber(value) && std::stoll(value))
+            {
+                if (!sign)
+                {
+                    label_counter -= 3;
+                    return "1"; 
+                }
+                code.push_back({ Op_goto, "", "", lable_true });
+                break;
+            }
+            if (!isNumber(value))
+            {
+                sign = true;
+                code.push_back({ Op_if, value, "", lable_true });
+            }
+            if (!or_expression_tail->childs.empty())
+            {
+                const Parser::TreeNode &and_expression = or_expression_tail->childs[0];
+                or_expression_tail = &or_expression_tail->childs[1];
+                value = do_expression(and_expression);
+            }
+            else
+            {
+                value = "";
+            }
+        }
+        if (!sign)
+        {
+            label_counter -= 3;
+            return "0"; 
+        }
+        std::string temp = new_temp();
+        code.push_back({ Op_goto, "", "", lable_false });       //      goto lable_false
+        code.push_back({ Op_label, "", "", lable_true });       //  label_true:
+        code.push_back({ Op_assign, "1", "", temp });           //      temp = 1
+        code.push_back({ Op_goto, "", "", lable_end });         //      goto label_end
+        code.push_back({ Op_label, "", "", lable_false });      //  lable_false:
+        code.push_back({ Op_assign, "0", "", temp });           //      temp = 0
+        code.push_back({ Op_label, "", "", lable_end });        //  lable_end:
+        return temp;
+    }
+    /* <and_expression> -> <relational_expression> <and_expression_tail> */
+    else if (node.vn_type == Parser::and_expression)
+    {
+        const Parser::TreeNode &relational_expression = node.childs[0];
+        const Parser::TreeNode *and_expression_tail = &node.childs[1];
+        std::string value = do_expression(relational_expression);
+        /* <and_expression_tail> -> && <relational_expression> <and_expression_tail> | ~ */
+        if (and_expression_tail->childs.empty())
+        {
+            return value;
+        }
+
+        std::string lable_false = new_label();
+        std::string lable_true = new_label();
+        std::string lable_end = new_label();
+        bool sign = false;
+
+        while (value != "")
+        {
+            if (isNumber(value) && !std::stoll(value))
+            {
+                if (!sign)
+                {
+                    label_counter -= 3;
+                    return "0";
+                }
+                code.push_back({ Op_goto, "", "", lable_false });
+                break;
+            }
+            if (!isNumber(value))
+            {
+                sign = true;
+                std::string nor_temp = new_temp();
+                code.push_back({ Op_not, value, "", nor_temp });
+                code.push_back({ Op_if, nor_temp, "", lable_false });
+            }
+            if (!and_expression_tail->childs.empty())
+            {
+                const Parser::TreeNode &relational_expression = and_expression_tail->childs[0];
+                and_expression_tail = &and_expression_tail->childs[1];
+                value = do_expression(relational_expression);
+            }
+            else
+            {
+                value = "";
+            }
+        }
+        if (!sign)
+        {
+            label_counter -= 3;
+            return "1";
+        }
+        std::string temp = new_temp();
+        code.push_back({ Op_goto, "", "", lable_true });        //      goto lable_true
+        code.push_back({ Op_label, "", "", lable_false });      //  lable_false:
+        code.push_back({ Op_assign, "0", "", temp });           //      temp = 0
+        code.push_back({ Op_goto, "", "", lable_end });         //      goto label_end
+        code.push_back({ Op_label, "", "", lable_true });       //  lable_true:
+        code.push_back({ Op_assign, "1", "", temp });           //      temp = 1
+        code.push_back({ Op_label, "", "", lable_end });        //  lable_end:
+        return temp;
     }
     /* <relational_expression> -> <additive_expression> <relational_expression_tail> */
     else if (node.vn_type == Parser::relational_expression)

@@ -55,7 +55,7 @@ public:
 private:
     const Parser::TreeNode &root;
     unsigned int temp_counter;
-    unsigned int lable_counter;
+    unsigned int label_counter;
     unsigned int scope_counter;
     std::string curFunName;
     bool m_hasError;
@@ -66,7 +66,7 @@ private:
     std::vector<Quaternion> code;
 
     std::string new_temp();
-    std::string new_lable();
+    std::string new_label();
     Symbol *getSymbol(const std::string &symbol_name);
 
     void generate_3ac(const Parser::TreeNode &node);

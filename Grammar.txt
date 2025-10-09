@@ -84,12 +84,26 @@
 <return_tail> -> <expression>
 <return_tail> -> ~
 
-# 表达式：关系表达式 表达式尾
-<expression> -> <relational_expression> <expression_tail>
+# 表达式：或表达式 表达式尾
+<expression> -> <or_expression> <expression_tail>
 
-# 表达式尾：若干个 = 关系表达式 或 空
-<expression_tail> -> = <relational_expression> <expression_tail>
+# 表达式尾：若干个 = 或表达式 或 空
+<expression_tail> -> = <or_expression> <expression_tail>
 <expression_tail> -> ~
+
+# 或表达式：与表达式 或表达式尾
+<or_expression> -> <and_expression> <or_expression_tail>
+
+# 或表达式尾：若干个 || 与表达式 或 空
+<or_expression_tail> -> || <and_expression> <or_expression_tail>
+<or_expression_tail> -> ~
+
+# 与表达式：关系表达式 与表达式尾
+<and_expression> -> <relational_expression> <and_expression_tail>
+
+# 与表达式尾：若干个 && 关系表达式 或 空
+<and_expression_tail> -> && <relational_expression> <and_expression_tail>
+<and_expression_tail> -> ~
 
 # 关系表达式： 算术表达式 关系表达式尾：
 <relational_expression> -> <additive_expression> <relational_expression_tail>

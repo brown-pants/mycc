@@ -244,7 +244,14 @@ void ASGenerator::if_goto(const std::string &condition, const std::string &label
     //condition is a variable
     else 
     {
-        asc += "\tcmpq $0, " + getVarCode(condition) + "\n";    //      cmpq $0, {condition}
+        if (isOneByteType(condition))
+        {
+            asc += "\tcmpb $0, " + getVarCode(condition) + "\n";    //      cmpb $0, {condition}
+        }
+        else
+        {
+            asc += "\tcmpq $0, " + getVarCode(condition) + "\n";    //      cmpq $0, {condition}
+        }
         asc += "\tjne " + label + "\n";                         //      jne {label}
     }
 }
