@@ -3,7 +3,7 @@
 #include "../../debug/Debug.h"
 
 TACGenerator::TACGenerator(const Parser::TreeNode &root)
-    : root(root), temp_counter(0U), label_counter(0U), scope_counter(0U), m_hasError(false),
+    : root(root), temp_counter(0U), label_counter(0U), str_counter(0U), scope_counter(0U), m_hasError(false),
     dataSizeMap
     ({
         { Token::DT_int, 8 },
@@ -34,6 +34,24 @@ std::string TACGenerator::new_temp()
 std::string TACGenerator::new_label()
 {
     return std::string(".lable") + std::to_string(label_counter ++);
+}
+
+std::string TACGenerator::new_string()
+{
+    return std::string(".str") + std::to_string(str_counter ++);
+}
+
+std::string TACGenerator::getStrName(const std::string &str)
+{
+    auto iter = strNames.find(str);
+    if (iter == strNames.end())
+    {
+        std::string str_name = new_string();
+        strNames.insert(std::pair<std::string, std::string>(str, str_name));
+        code.insert(code.begin(), { Op_dec_string, str, "", str_name });
+        return str_name;
+    }
+    return iter->second;
 }
 
 Symbol *TACGenerator::getSymbol(const std::string &symbol_name)
@@ -101,12 +119,12 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             std::string value = "";
             const Parser::TreeNode &expression = dec_tail.childs[0];
             value = do_expression(expression);
-            if (!isNumber(value))
+            if (!isNumber(value) && value[0] != '&')
             {
                 Debug::InitialNotConstant(dec_tail.tokens[0]);
                 m_hasError = true;
             }
-             // dec ptr
+            // dec ptr
             if (isPointer)
             {
                 dec_var(false, type, id, value, "ptr");
@@ -488,7 +506,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 return "";
             }
-            if (left_value[0] == '&'|| isNumber(left_value) || left_value.substr(0, 2) == "t^")
+            if (left_value[0] == '&' || isNumber(left_value) || left_value.substr(0, 2) == "t^")
             {
                 Debug::InvalidOperands(eq_token);
                 m_hasError = true;
@@ -1007,10 +1025,17 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
         else
         {
             const Token &num = node.tokens[0];
+            // character
             if (num.lexeme()[0] == '\'')
             {
                 return std::to_string(num.lexeme()[1]);
             }
+            // string
+            else if (num.lexeme()[0] == '\"')
+            {
+                return '&' + getStrName(num.lexeme());
+            }
+            // integer
             return num.lexeme();
         }
     }
@@ -1176,6 +1201,12 @@ unsigned int TACGenerator::getPointerStride(const std::string &str) const
     if (isNumber(str) || str[0] == '*' || str == "")
     {
         return 0;
+    }
+
+    // string
+    if (str.substr(0, 2) == "&.")
+    {
+        return dataSizeMap.find(Token::DT_char)->second;
     }
 
     auto iter = pointerTemps.find(str);

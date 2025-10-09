@@ -32,6 +32,7 @@ private:
     std::string getVarCode(const std::string &var, bool isWrite = false);
     void dec_global_init(const std::string &var_name, const std::string &value, const std::string &type);
     void dec_global_var(const std::string &var_name, const std::string &size, const std::string &type);
+    void dec_string(const std::string &str_name, const std::string &string);
     void dec_local_var(const std::string &var_name, const std::string &size, const std::string &type);
     void begin_func(const std::string &func_name);
     void end_func(const std::string &func_name);

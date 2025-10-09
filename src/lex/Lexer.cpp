@@ -299,7 +299,7 @@ Token Lexer::getCharStr()
     char mark = ch;
 
     do {
-        if (ch == '\\')
+        if (ch == '\\' && mark == '\'')
         {
             char nextCh = peek_next();
             /* \n */
@@ -313,10 +313,17 @@ Token Lexer::getCharStr()
             {
                 ch = '\0';
                 pos ++;
-            }/* \' */
+            }
+            /* \' */
             else if (nextCh == '\'')
             {
                 ch = '\'';
+                pos ++;
+            }
+            /* \" */
+            else if (nextCh == '\"')
+            {
+                ch = '\"';
                 pos ++;
             }
             /* \\ */
@@ -327,6 +334,17 @@ Token Lexer::getCharStr()
             else
             {
                 escape_error = true;
+            }
+        }
+        else if (ch == '\\' && mark == '\"')
+        {
+            char nextCh = peek_next();
+            if (nextCh == '\"')
+            {
+                ch_s += ch;
+                ch_s += next();
+                ch = next();
+                continue;
             }
         }
         ch_s += ch;

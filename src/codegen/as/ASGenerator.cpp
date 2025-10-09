@@ -20,6 +20,9 @@ std::string ASGenerator::exec()
         case TACGenerator::Op_global_var:
             dec_global_var(code.result, code.arg1, code.arg2);
             break;
+        case TACGenerator::Op_dec_string:
+            dec_string(code.result, code.arg1);
+            break;
         case TACGenerator::Op_local_var:
             dec_local_var(code.result, code.arg1, code.arg2);
             break;
@@ -136,11 +139,16 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
 
 void ASGenerator::dec_global_init(const std::string &var_name, const std::string &value, const std::string &type)
 {
+    std::string result = value;
+    if (value[0] == '&')
+    {
+        result = value.substr(1);
+    }
     std::string as_type = (type == "var_char" ? ".byte" : ".quad");
     asc += "\t.global " + var_name + "\n";          //      .global {var_name}
     asc += "\t.data\n";                             //      .data
     asc += var_name + ":\n";                        // {var_name}:
-    asc += "\t" + as_type + " " + value + "\n";     //      {.byte | .quad} {value}
+    asc += "\t" + as_type + " " + result + "\n";    //      {.byte | .quad} {result}
     symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
 }
 
@@ -151,6 +159,14 @@ void ASGenerator::dec_global_var(const std::string &var_name, const std::string 
     asc += var_name + ":\n";                // {var_name}:
     asc += "\t.zero " + size + "\n";        //      .zero {size}
     symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
+}
+
+void ASGenerator::dec_string(const std::string &str_name, const std::string &string)
+{
+    asc += "\t.data\n";                     //      .data
+    asc += str_name + ":\n";                // {str_name}:
+    asc += "\t.string " + string + "\n";    //      {.string} {string}
+    symTable.insert(std::pair<std::string, VarSymbol>(str_name, VarSymbol(str_name + "(%rip)", "ptr_char")));    // {str_name} : {str_name}(%rip)
 }
 
 void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size, const std::string &type)

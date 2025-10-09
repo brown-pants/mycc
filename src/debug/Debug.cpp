@@ -172,6 +172,9 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             case TACGenerator::Op_dec_param:
             std::cout << "dec_param " << code.result << ", " << code.arg1 << std::endl;
             break;
+            case TACGenerator::Op_dec_string:
+            std::cout << "dec_string " << code.result << " = " << code.arg1 << std::endl;
+            break;
             case TACGenerator::Op_param:
             std::cout << "param " << code.result << std::endl;
             break;

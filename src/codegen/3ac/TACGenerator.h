@@ -14,6 +14,7 @@ public:
     {
         Op_global_init, // define a global variable and assign an initial value: arg1 = initial_value, arg2 = type, result = varName
         Op_global_var,  // define a global variable : arg1 = size, arg2 = type, result = varName
+        Op_dec_string,  // define a string : result = strName, arg1 = string
         Op_local_var,   // define a local variable : arg1 = size, arg2 = type, result = varName
         Op_begin_func,  // begin of function : result = funcName
         Op_end_func,    // end of function : result = funcName
@@ -56,6 +57,7 @@ private:
     const Parser::TreeNode &root;
     unsigned int temp_counter;
     unsigned int label_counter;
+    unsigned int str_counter;
     unsigned int scope_counter;
     std::string curFunName;
     bool m_hasError;
@@ -63,10 +65,13 @@ private:
     std::stack<std::string> scopeStack;
     std::unordered_map<Token::Type, unsigned int> dataSizeMap;
     std::unordered_map<std::string, unsigned int> pointerTemps;
+    std::unordered_map<std::string, std::string> strNames;
     std::vector<Quaternion> code;
 
     std::string new_temp();
     std::string new_label();
+    std::string new_string();
+    std::string getStrName(const std::string &str);
     Symbol *getSymbol(const std::string &symbol_name);
 
     void generate_3ac(const Parser::TreeNode &node);
