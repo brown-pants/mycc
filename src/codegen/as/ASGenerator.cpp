@@ -247,27 +247,15 @@ void ASGenerator::goto_label(const std::string &label_name)
 
 void ASGenerator::if_goto(const std::string &condition, const std::string &label)
 {
-    // condition is a number
-    if (isNumber(condition))
+    if (isOneByteType(condition))
     {
-        if (std::stoll(condition))
-        {
-            goto_label(label);
-        }
+        asc += "\tcmpb $0, " + getVarCode(condition) + "\n";    //      cmpb $0, {condition}
     }
-    //condition is a variable
-    else 
+    else
     {
-        if (isOneByteType(condition))
-        {
-            asc += "\tcmpb $0, " + getVarCode(condition) + "\n";    //      cmpb $0, {condition}
-        }
-        else
-        {
-            asc += "\tcmpq $0, " + getVarCode(condition) + "\n";    //      cmpq $0, {condition}
-        }
-        asc += "\tjne " + label + "\n";                         //      jne {label}
+        asc += "\tcmpq $0, " + getVarCode(condition) + "\n";    //      cmpq $0, {condition}
     }
+    asc += "\tjne " + label + "\n";                         //      jne {label}
 }
 
 void ASGenerator::assign(const std::string &arg, const std::string &result)

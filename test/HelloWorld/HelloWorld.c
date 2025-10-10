@@ -46,8 +46,14 @@ void HelloWorld_2()
     puts(arr);
 }
 
+char *S = "Hello World\n";
+
 int main()
 {
     HelloWorld_1();
     HelloWorld_2();
+    puts("Hello World\n");
+    char *s = "Hello World\n";
+    puts(S);
+    puts(s);
 }

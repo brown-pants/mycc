@@ -248,6 +248,18 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             else_statement = &else_part.childs[0];
         }
         std::string condition = do_expression(expression);
+        if (isNumber(condition))
+        {
+            if (std::stoll(condition))
+            {
+                generate_3ac(statement);
+            }
+            else if (else_statement)
+            {
+                generate_3ac(*else_statement);
+            }
+            return;
+        }
         std::string label1 = new_label();
         std::string label2 = new_label();
         code.push_back({ Op_if, condition, "", label1});    // if (contidion) goto L1
@@ -278,25 +290,37 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             condition_node = &node.childs[1];
         }
         const Parser::TreeNode &statement = is_for ? node.childs[3] : node.childs[1];
-        std::string label1 = new_label();
-        std::string label2 = new_label();
-        std::string label3 = new_label();
         if (is_for)
         {
             do_expression(node.childs[0]);
         }
-        code.push_back({ Op_label, "", "", label1 });       // L1:
+        std::string label1 = new_label();
+        code.push_back({ Op_label, "", "", label1 });           // L1:
+        int L1_row = code.size() - 1;
         std::string condition = do_expression(*condition_node);
-        code.push_back({ Op_if, condition, "", label2 });   // if (condition) goto L2
-        code.push_back({ Op_goto, "", "", label3 });        // goto L3
-        code.push_back({ Op_label, "", "", label2 });       // L2:
-        generate_3ac(statement);                            // do statement
+        // condition == 0
+        if (isNumber(condition) && !std::stoll(condition))
+        {
+            label_counter --;
+            code.erase(code.begin() + L1_row);                  // erase L1
+            break;
+        }
+        std::string label3 = new_label();
+        // condition != 1
+        if (!isNumber(condition))
+        {
+            std::string label2 = new_label();
+            code.push_back({ Op_if, condition, "", label2 });   // if (condition) goto L2
+            code.push_back({ Op_goto, "", "", label3 });        // goto L3
+            code.push_back({ Op_label, "", "", label2 });       // L2:
+        }
+        generate_3ac(statement);                                // do statement
         if (is_for)
         {
             do_expression(node.childs[2]);
         }
-        code.push_back({ Op_goto, "", "", label1 });        // goto L1
-        code.push_back({ Op_label, "", "", label3 });       // L3:
+        code.push_back({ Op_goto, "", "", label1 });            // goto L1
+        code.push_back({ Op_label, "", "", label3 });           // L3:
         break;
     }
     /* <return_stmt> -> return <return_tail> ; */
