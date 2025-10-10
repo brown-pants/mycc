@@ -145,7 +145,6 @@ void ASGenerator::dec_global_init(const std::string &var_name, const std::string
         result = value.substr(1);
     }
     std::string as_type = (type == "var_char" ? ".byte" : ".quad");
-    asc += "\t.global " + var_name + "\n";          //      .global {var_name}
     asc += "\t.data\n";                             //      .data
     asc += var_name + ":\n";                        // {var_name}:
     asc += "\t" + as_type + " " + result + "\n";    //      {.byte | .quad} {result}
@@ -154,7 +153,6 @@ void ASGenerator::dec_global_init(const std::string &var_name, const std::string
 
 void ASGenerator::dec_global_var(const std::string &var_name, const std::string &size, const std::string &type)
 {
-    asc += "\t.global " + var_name + "\n";  //      .global {var_name}
     asc += "\t.bss\n";                      //      .bss
     asc += var_name + ":\n";                // {var_name}:
     asc += "\t.zero " + size + "\n";        //      .zero {size}
@@ -166,7 +164,7 @@ void ASGenerator::dec_string(const std::string &str_name, const std::string &str
     asc += "\t.data\n";                     //      .data
     asc += str_name + ":\n";                // {str_name}:
     asc += "\t.string " + string + "\n";    //      {.string} {string}
-    symTable.insert(std::pair<std::string, VarSymbol>(str_name, VarSymbol(str_name + "(%rip)", "ptr_char")));    // {str_name} : {str_name}(%rip)
+    symTable.insert(std::pair<std::string, VarSymbol>(str_name, VarSymbol(str_name + "(%rip)", "arr_char")));    // {str_name} : {str_name}(%rip)
 }
 
 void ASGenerator::dec_local_var(const std::string &var_name, const std::string &size, const std::string &type)
@@ -735,9 +733,10 @@ bool ASGenerator::isOneByteType(const std::string &str) const
     if (str[0] == '*')
     {
         std::string type = symTable.find(str.substr(1))->second.type;
-        return type == "arr_char" || type == "ptr_char";
+        return type == "ptr_char";
     }
-    return symTable.find(str)->second.type == "var_char";
+    std::string type = symTable.find(str)->second.type;
+    return type == "var_char" || type == "arr_char";
 }
 
 std::string ASGenerator::getSymbolType(const std::string &str) const
