@@ -131,6 +131,11 @@ void Debug::InitialNotConstant(const Token &token)
     std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "initializer element is not constant "  << red << token.lexeme() << white << std::endl;
 }
 
+void Debug::NotWithinLoop(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << token.lexeme() << white << " statement not within a loop" << white << std::endl;
+}
+
 void Debug::SetCurrentFile(const std::string &file)
 {
     curFile = file;

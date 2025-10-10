@@ -35,13 +35,13 @@
 <params_tail> -> , <param> <params_tail>
 <params_tail> -> ~
 
-#         ...;        {...}   if...else...  while for   return ...;
-# 语句： 表达式语句 或 复合语句 或 选择语句 或 迭代语句 或 返回语句
+# 语句： 表达式语句 或 复合语句 或 选择语句 或 迭代语句 或 返回语句 或 跳转语句
 <statement> -> <expression_stmt>
 <statement> -> <compound_stmt>
 <statement> -> <selection_stmt>
 <statement> -> <iteration_stmt>
 <statement> -> <return_stmt>
+<statement> -> <jump_stmt>
 
 # 表达式语句： 表达式 ; 或 ;
 <expression_stmt> -> <expression> ;
@@ -83,6 +83,10 @@
 # 返回尾： 表达式 或 空
 <return_tail> -> <expression>
 <return_tail> -> ~
+
+# 跳转语句：break; 或 continue;
+<jump_stmt> -> break ;
+<jump_stmt> -> continue ;
 
 # 表达式：或表达式 表达式尾
 <expression> -> <or_expression> <expression_tail>

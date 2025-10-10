@@ -174,6 +174,8 @@ void Parser::initTable()
           while    ->      { <iteration_stmt> }
           for      ->      { <iteration_stmt> }
           return   ->      { <return_stmt> }
+          break    ->      { <jump_stmt> }
+          continue ->      { <jump_stmt> }
     */
     ASTable[statement][Token::Not]                               = { Item{expression_stmt, Vn} };        // !        ->      { <expression_stmt> }
     ASTable[statement][Token::Minus]                             = { Item{expression_stmt, Vn} };        // -        ->      { <expression_stmt> }
@@ -191,6 +193,8 @@ void Parser::initTable()
     ASTable[statement][Token::While]                             = { Item{iteration_stmt, Vn} };         // while    ->      { <iteration_stmt> }
     ASTable[statement][Token::For]                               = { Item{iteration_stmt, Vn} };         // for      ->      { <iteration_stmt> }
     ASTable[statement][Token::Return]                            = { Item{return_stmt, Vn} };            // return   ->      { <return_stmt> }
+    ASTable[statement][Token::Break]                             = { Item{jump_stmt, Vn} };              // break    ->      { <jump_stmt> }
+    ASTable[statement][Token::Continue]                          = { Item{jump_stmt, Vn} };              // continue ->      { <jump_stmt> }
 
     /*<expression_stmt>:
           ;        ->      { ; }
@@ -235,6 +239,8 @@ void Parser::initTable()
           while    ->      { <compound> <compound_list> }
           for      ->      { <compound> <compound_list> }
           return   ->      { <compound> <compound_list> }
+          break    ->      { <compound> <compound_list> }
+          continue ->      { <compound> <compound_list> }
     */
     ASTable[compound_list][Token::Not]                           = { Item{compound, Vn}, Item{compound_list, Vn} };      // !        ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Minus]                         = { Item{compound, Vn}, Item{compound_list, Vn} };      // -        ->      { <compound> <compound_list> }
@@ -257,6 +263,8 @@ void Parser::initTable()
     ASTable[compound_list][Token::While]                         = { Item{compound, Vn}, Item{compound_list, Vn} };      // while    ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::For]                           = { Item{compound, Vn}, Item{compound_list, Vn} };      // for      ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Return]                        = { Item{compound, Vn}, Item{compound_list, Vn} };      // return   ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::Break]                         = { Item{compound, Vn}, Item{compound_list, Vn} };      // break    ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::Continue]                      = { Item{compound, Vn}, Item{compound_list, Vn} };      // continue ->      { <compound> <compound_list> }
 
     /*<compound>:
           type     ->      { <var_dec> }
@@ -273,6 +281,8 @@ void Parser::initTable()
           while    ->      { <statement> }
           for      ->      { <statement> }
           return   ->      { <statement> }
+          break    ->      { <statement> }
+          continue ->      { <statement> }
     */
     ASTable[compound][Token::DT_int]                             = { Item{var_dec, Vn} };        // type     ->      { <var_dec> }
     ASTable[compound][Token::DT_char]                            = { Item{var_dec, Vn} };
@@ -294,6 +304,8 @@ void Parser::initTable()
     ASTable[compound][Token::While]                              = { Item{statement, Vn} };      // while    ->      { <statement> }
     ASTable[compound][Token::For]                                = { Item{statement, Vn} };      // for      ->      { <statement> }
     ASTable[compound][Token::Return]                             = { Item{statement, Vn} };      // return   ->      { <statement> }
+    ASTable[compound][Token::Break]                              = { Item{statement, Vn} };      // break    ->      { <statement> }
+    ASTable[compound][Token::Continue]                           = { Item{statement, Vn} };      // continue ->      { <statement> }
 
     /*<var_dec>:
           type     ->      { type <is_pointer> id <var_dec_tail> ; }
@@ -334,6 +346,8 @@ void Parser::initTable()
           while    ->      { ~ }
           for      ->      { ~ }
           return   ->      { ~ }
+          break    ->      { ~ }
+          continue ->      { ~ }
     */
     ASTable[else_part][Token::Not]                               = { Item{Token::Nul, Vt} };                             // !        ->      { ~ }
     ASTable[else_part][Token::Minus]                             = { Item{Token::Nul, Vt} };                             // -        ->      { ~ }
@@ -357,6 +371,8 @@ void Parser::initTable()
     ASTable[else_part][Token::While]                             = { Item{Token::Nul, Vt} };                             // while    ->      { ~ }
     ASTable[else_part][Token::For]                               = { Item{Token::Nul, Vt} };                             // for      ->      { ~ }
     ASTable[else_part][Token::Return]                            = { Item{Token::Nul, Vt} };                             // return   ->      { ~ }
+    ASTable[else_part][Token::Break]                             = { Item{Token::Nul, Vt} };                             // break    ->      { ~ }
+    ASTable[else_part][Token::Continue]                          = { Item{Token::Nul, Vt} };                             // continue ->      { ~ }
 
     /*<iteration_stmt>:
           while    ->      { while ( <expression> ) <statement> }
@@ -391,6 +407,13 @@ void Parser::initTable()
     ASTable[return_tail][Token::Float]                           = { Item{expression, Vn} };
     ASTable[return_tail][Token::String]                          = { Item{expression, Vn} };
     ASTable[return_tail][Token::OpenParen]                       = { Item{expression, Vn} };     // (        ->      { <expression> }
+
+    /*<jump_stmt>:
+          break    ->      { break ; }
+          continue ->      { continue ; }
+    */
+    ASTable[jump_stmt][Token::Break]                             = { Item{Token::Break, Vt}, Item{Token::Semicolon, Vt} };          // break    ->      { break ; }
+    ASTable[jump_stmt][Token::Continue]                          = { Item{Token::Continue, Vt}, Item{Token::Semicolon, Vt} };       // continue ->      { continue ; }
 
     /*<expression>:
           !        ->      { <or_expression> <expression_tail> }

@@ -306,6 +306,17 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             break;
         }
         std::string label3 = new_label();
+        std::string label4;
+        breakStack.push(label3);
+        if (is_for)
+        {
+            label4 = new_label();
+            continueStack.push(label4);
+        }
+        else
+        {
+            continueStack.push(label1);
+        }
         // condition != 1
         if (!isNumber(condition))
         {
@@ -317,10 +328,20 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         generate_3ac(statement);                                // do statement
         if (is_for)
         {
+            code.push_back({ Op_label, "", "", label4 });       // L4:
             do_expression(node.childs[2]);
         }
         code.push_back({ Op_goto, "", "", label1 });            // goto L1
         code.push_back({ Op_label, "", "", label3 });           // L3:
+        // clear jump stack
+        if (!breakStack.empty() && breakStack.top() == label3)
+        {
+            breakStack.pop();
+        }
+        if (!continueStack.empty() && (is_for && continueStack.top() == label4 || !is_for && continueStack.top() == label1))
+        {
+            continueStack.pop();
+        }
         break;
     }
     /* <return_stmt> -> return <return_tail> ; */
@@ -337,8 +358,25 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         code.push_back({ Op_goto, "", "", curFunName + "_exit" });      // goto func_exit
         break;
     }
+    /* <jump_stmt> -> break ; | continue ; */
+    case Parser::jump_stmt:
+    {
+        const Token &token = node.tokens[0];
+        std::stack<std::string> &_stack = (token.type() == Token::Break ? breakStack : continueStack);
+        if (_stack.empty())
+        {
+            Debug::NotWithinLoop(token);
+            m_hasError = true;
+        }
+        else
+        {
+            std::string jmp_label = _stack.top();
+            _stack.pop();
+            code.push_back({ Op_goto, "", "", jmp_label });
+        }
+        break;
     }
-
+    }
 }
 
 void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const std::string &value, const std::string &arr_ptr, int arrSize)

@@ -63,6 +63,8 @@ private:
     bool m_hasError;
 
     std::stack<std::string> scopeStack;
+    std::stack<std::string> breakStack;
+    std::stack<std::string> continueStack;
     std::unordered_map<Token::Type, unsigned int> dataSizeMap;
     std::unordered_map<std::string, unsigned int> pointerTemps;
     std::unordered_map<std::string, std::string> strNames;

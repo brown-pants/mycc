@@ -64,7 +64,9 @@ public:
         For,        //  for
         Else,       //  else
         While,      //  while
+        Break,      //  break
         Return,     //  return
+        Continue,   //  continue
 
         /* date type */
         DT_int,     //  int

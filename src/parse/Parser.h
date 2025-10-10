@@ -20,7 +20,7 @@ public:
         params,                     //  <params>                    -> <param> <params_tail> | ~
         param,                      //  <param>                     -> type <is_pointer> id
         params_tail,                //  <params_tail>               -> , <param> <params_tail> | ~
-        statement,                  //  <statement>                 -> <expression_stmt> | <compound_stmt> | <selection_stmt> | <iteration_stmt> | <return_stmt>
+        statement,                  //  <statement>                 -> <expression_stmt> | <compound_stmt> | <selection_stmt> | <iteration_stmt> | <return_stmt> | <jump_stmt>
         expression_stmt,            //  <expression_stmt>           -> <expression> ; | ;
         compound_stmt,              //  <compound_stmt>             -> { <compound_list> }
         compound_list,              //  <compound_list>             -> <compound> <compound_list> | ~
@@ -32,6 +32,7 @@ public:
         iteration_stmt,             //  <iteration_stmt>            -> while ( <expression> ) <statement> | for ( <expression> ; <expression> ; <expression> ) <statement>
         return_stmt,                //  <return_stmt>               -> return <return_tail> ;
         return_tail,                //  <return_tail>               -> <expression> | ~
+        jump_stmt,                  //  <jump_stmt>                 -> break ; | continue ;
         expression,                 //  <expression>                -> <or_expression> <expression_tail>
         expression_tail,            //  <expression_tail>           -> = <or_expression> <expression_tail> | ~
         or_expression,              //  <or_expression>             -> <and_expression> <or_expression_tail>
@@ -83,7 +84,7 @@ private:
         ItemType type;
     };
 
-    std::vector<Item> ASTable[39][39];
+    std::vector<Item> ASTable[40][41];
 
     void initTable();
 };
