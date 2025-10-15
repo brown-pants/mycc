@@ -45,6 +45,10 @@ struct FunctionSymbol : public Symbol
     Token::Type return_type;
     bool return_pointer;
     std::vector<Token::Type> params_type;
+    bool operator!=(const FunctionSymbol &other)
+    {
+        return return_type != other.return_type || return_pointer != other.return_pointer || params_type != other.params_type;
+    }
 };
 
 #endif

@@ -14,19 +14,21 @@ public:
     {
         program,                    //  <program>                   -> <declaration_list>
         declaration_list,           //  <declaration_list>          -> <declaration> <declaration_list> | ~
-        declaration,                //  <declaration>               -> type <is_pointer> id <dec_tail>
+        declaration,                //  <declaration>               -> <data_type> <is_pointer> id <dec_tail> | extern <data_type> <is_pointer> id <dec_tail>
+        data_type,                  //  <data_type>                 -> int | char | float | void
         is_pointer,                 //  <is_pointer>                -> * | ~
-        dec_tail,                   //  <dec_tail>                  -> ; | = <expression> ; | [ num ] ; | ( <params> ) <compound_stmt>
+        dec_tail,                   //  <dec_tail>                  -> ; | = <expression> ; | [ <factor> ] ; | ( <params> ) <func_tail>
+        func_tail,                  //  <func_tail>                 -> <compound_stmt> | ;
         params,                     //  <params>                    -> <param> <params_tail> | ~
-        param,                      //  <param>                     -> type <is_pointer> id
+        param,                      //  <param>                     -> <data_type> <is_pointer> id
         params_tail,                //  <params_tail>               -> , <param> <params_tail> | ~
         statement,                  //  <statement>                 -> <expression_stmt> | <compound_stmt> | <selection_stmt> | <iteration_stmt> | <return_stmt> | <jump_stmt>
         expression_stmt,            //  <expression_stmt>           -> <expression> ; | ;
         compound_stmt,              //  <compound_stmt>             -> { <compound_list> }
         compound_list,              //  <compound_list>             -> <compound> <compound_list> | ~
         compound,                   //  <compound>                  -> <var_dec> | <statement>
-        var_dec,                    //  <var_dec>                   -> type <is_pointer> id <var_dec_tail> ;
-        var_dec_tail,               //  <var_dec_tail>              -> [ num ] | <determine_assign>
+        var_dec,                    //  <var_dec>                   -> <data_type> <is_pointer> id <var_dec_tail> ;
+        var_dec_tail,               //  <var_dec_tail>              -> [ <factor> ] | <determine_assign>
         selection_stmt,             //  <selection_stmt>            -> if ( <expression> ) <statement> <else_part>
         else_part,                  //  <else_part>                 -> else <statement> | ~
         iteration_stmt,             //  <iteration_stmt>            -> while ( <expression> ) <statement> | for ( <expression> ; <expression> ; <expression> ) <statement>
@@ -84,7 +86,7 @@ private:
         ItemType type;
     };
 
-    std::vector<Item> ASTable[40][41];
+    std::vector<Item> ASTable[42][42];
 
     void initTable();
 };

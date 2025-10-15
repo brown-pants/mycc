@@ -4,7 +4,15 @@
 #include "parse/Parser.h"
 #include "codegen/3ac/TACGenerator.h"
 #include "codegen/as/ASGenerator.h"
+#include "symtab/SymbolTable.h"
 #include <stdlib.h>
+
+enum State
+{
+    Normal,
+    Library,    // -l
+    Output      // -o
+};
 
 int main(int argc, char *argv[])
 {
@@ -14,46 +22,79 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    const std::string &file_name = argv[1];
-    Debug::SetCurrentFile(file_name);
+    State state = Normal;
+    std::string output = "a.out";
+    std::string objStr = "";
 
-    Lexer lexer(Util::ReadFile(file_name));
-    std::vector<Token> tokens = lexer.exec();
-
-    if (lexer.hasError())
+    for (int i = 1; i < argc; i ++)
     {
-        return -1;
+        const std::string &file_name = argv[i];
+        if (file_name == "-l")
+        {
+            state = Library;
+            continue;
+        }
+        else if (file_name == "-o")
+        {
+            state = Output;
+            continue;
+        }
+
+        if (state == Library)
+        {
+            objStr += file_name;
+            objStr += " ";
+            continue;
+        }
+        else if (state == Output)
+        {
+            output = file_name;
+            state = Normal;
+            continue;
+        }
+
+        Debug::SetCurrentFile(file_name);
+        
+        SymbolTable::GetInstance().clear();
+
+        Lexer lexer(Util::ReadFile(file_name));
+        std::vector<Token> tokens = lexer.exec();
+
+        if (lexer.hasError())
+        {
+            return -1;
+        }
+
+        Debug::PrintTokens(tokens);
+
+        Parser parser(tokens);
+        Parser::TreeNode astRoot = parser.exec();
+        
+        if (parser.hasError())
+        {
+            return -1;
+        }
+
+        TACGenerator tacGenerator(astRoot);
+        const std::vector<TACGenerator::Quaternion> &tac = tacGenerator.exec();
+
+        if (tacGenerator.hasError())
+        {
+            return -1;
+        }
+
+        Debug::PrintTAC(tac);
+
+        ASGenerator asGenerator(tac);
+        std::string asc = asGenerator.exec();
+
+        const std::string &f_name = Util::FileNameReplaceExtension(file_name);
+        Util::WriteFile(f_name + ".s", asc);
+
+        system(("as " + f_name + ".s -o " + f_name + ".o").c_str());
+
+        objStr += f_name + ".o ";
     }
-
-    Debug::PrintTokens(tokens);
-
-    Parser parser(tokens);
-    Parser::TreeNode astRoot = parser.exec();
-    
-    if (parser.hasError())
-    {
-        return -1;
-    }
-
-    TACGenerator tacGenerator(astRoot);
-    const std::vector<TACGenerator::Quaternion> &tac = tacGenerator.exec();
-
-    if (tacGenerator.hasError())
-    {
-        return -1;
-    }
-
-    Debug::PrintTAC(tac);
-
-    ASGenerator asGenerator(tac);
-    std::string asc = asGenerator.exec();
-
-    const std::string &f_name = Util::FileNameReplaceExtension(file_name);
-    Util::WriteFile(f_name + ".s", asc);
-
-    system(("as " + f_name + ".s -o " + f_name + ".o").c_str());
-
-    system(("ld " + f_name + ".o -o " + f_name + ".out").c_str());
-
+    system(("ld " + objStr + "-o " + output).c_str());
     return 0;
 }

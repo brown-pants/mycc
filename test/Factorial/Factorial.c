@@ -1,9 +1,11 @@
+void putchar(int c);
+
 void printInt(int a)
 {
     if (a) 
     {
         printInt(a / 10);
-        mycc_putchar(a % 10 + '0');
+        putchar(a % 10 + '0');
     }
 }
 
@@ -11,15 +13,15 @@ void printSignInt(int a)
 {
     if (a < 0)
     {
-        mycc_putchar('-');
+        putchar('-');
         a = 0-a;
     }
     if (a == 0)
     {
-        mycc_putchar('0');
+        putchar('0');
     }
     else printInt(a);
-    mycc_putchar('\n');
+    putchar('\n');
 }
 
 int factorial(int n)
@@ -49,7 +51,7 @@ int main()
     int defualt_var;
     printSignInt(defualt_var);
     printSignInt(factorial(5));
-    printSignInt(0-factorial(5));
+    printSignInt(-factorial(5));
     printSignInt(factorial_recursion(10));
-    printSignInt(0-factorial_recursion(10));
+    printSignInt(-factorial_recursion(10));
 }

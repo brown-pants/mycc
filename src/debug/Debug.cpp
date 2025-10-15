@@ -34,6 +34,7 @@ std::unordered_map<Token::Type, std::string> Debug::TokenTypeMap =
     { Token::Else,          "else" },
     { Token::While,         "while" },
     { Token::Return,        "return" },
+    { Token::Extern,        "extern" },
     { Token::DT_int,        "int" },
     { Token::DT_char,       "char" },
     { Token::DT_float,      "float" },
@@ -136,6 +137,11 @@ void Debug::NotWithinLoop(const Token &token)
     std::cout << curFile << ":" << token.line() << ": " << red << "error: " << token.lexeme() << white << " statement not within a loop" << white << std::endl;
 }
 
+void Debug::NotConstant(const Token &token)
+{
+    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << " variable-sized object may not a constant " << red << token.lexeme() << white << std::endl;
+}
+
 void Debug::SetCurrentFile(const std::string &file)
 {
     curFile = file;
@@ -165,6 +171,9 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             case TACGenerator::Op_global_var:
             std::cout << "global " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;
+            case TACGenerator::Op_extern_var:
+            std::cout << "extern " << code.result << ", " << code.arg1 << std::endl;
+            break;
             case TACGenerator::Op_local_var:
             std::cout << "local " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;
@@ -175,7 +184,7 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             std::cout << "end_function " << code.result << std::endl;
             break;
             case TACGenerator::Op_dec_param:
-            std::cout << "dec_param " << code.result << ", " << code.arg1 << std::endl;
+            std::cout << "dec_param " << code.result << ", " << code.arg1 << ", " << code.arg2 << std::endl;
             break;
             case TACGenerator::Op_dec_string:
             std::cout << "dec_string " << code.result << " = " << code.arg1 << std::endl;

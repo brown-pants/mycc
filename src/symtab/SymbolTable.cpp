@@ -5,17 +5,6 @@ SymbolTable::SymbolTable()
 
 }
 
-SymbolTable::~SymbolTable()
-{
-    for (auto mp : symTable)
-    {
-        for (auto pir : mp.second)
-        {
-            delete pir.second;
-        }
-    }
-}
-
 SymbolTable &SymbolTable::GetInstance()
 {
     static SymbolTable instance;
@@ -34,6 +23,18 @@ void SymbolTable::insert(const std::string &symbol_name, const std::string &scop
     {
         iter->second.insert(std::pair<std::string, Symbol *>(scope, symbol));
     }
+}
+
+void SymbolTable::clear()
+{
+    for (auto mp : symTable)
+    {
+        for (auto pir : mp.second)
+        {
+            delete pir.second;
+        }
+    }
+    symTable.clear();
 }
 
 Symbol *SymbolTable::find(const std::string &symbol_name, const std::string &scope)

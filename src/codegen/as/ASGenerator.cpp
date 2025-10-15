@@ -2,14 +2,13 @@
 #include <limits>
 
 ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac)
-    : tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0)
+    : tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0), has_main(false)
 {
 
 }
 
 std::string ASGenerator::exec()
 {
-    dec_mycc_putchar();
     for (const TACGenerator::Quaternion &code : tac)
     {
         switch(code.op)
@@ -19,6 +18,9 @@ std::string ASGenerator::exec()
             break;
         case TACGenerator::Op_global_var:
             dec_global_var(code.result, code.arg1, code.arg2);
+            break;
+        case TACGenerator::Op_extern_var:
+            dec_extern_var(code.result, code.arg1);
             break;
         case TACGenerator::Op_dec_string:
             dec_string(code.result, code.arg1);
@@ -33,7 +35,7 @@ std::string ASGenerator::exec()
             end_func(code.result);
             break;
         case TACGenerator::Op_dec_param:
-            dec_param(code.result, code.arg1);
+            dec_param(code.result, code.arg1, code.arg2);
             break;
         case TACGenerator::Op_param:
             param(code.result);
@@ -94,7 +96,10 @@ std::string ASGenerator::exec()
             break;
         }
     }
-    dec_start();
+    if (has_main)
+    {
+        dec_start();
+    }
     return asc;
 }
 
@@ -145,6 +150,7 @@ void ASGenerator::dec_global_init(const std::string &var_name, const std::string
         result = value.substr(1);
     }
     std::string as_type = (type == "var_char" ? ".byte" : ".quad");
+    asc += "\t.global " + var_name + "\n";          //      .global {var_name}
     asc += "\t.data\n";                             //      .data
     asc += var_name + ":\n";                        // {var_name}:
     asc += "\t" + as_type + " " + result + "\n";    //      {.byte | .quad} {result}
@@ -153,9 +159,15 @@ void ASGenerator::dec_global_init(const std::string &var_name, const std::string
 
 void ASGenerator::dec_global_var(const std::string &var_name, const std::string &size, const std::string &type)
 {
+    asc += "\t.global " + var_name + "\n";  //      .global {var_name}
     asc += "\t.bss\n";                      //      .bss
     asc += var_name + ":\n";                // {var_name}:
     asc += "\t.zero " + size + "\n";        //      .zero {size}
+    symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
+}
+
+void ASGenerator::dec_extern_var(const std::string &var_name, const std::string &type)
+{
     symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(var_name + "(%rip)", type)));    // {var_name} : {var_name}(%rip)
 }
 
@@ -176,6 +188,11 @@ void ASGenerator::dec_local_var(const std::string &var_name, const std::string &
 
 void ASGenerator::begin_func(const std::string &func_name)
 {
+    if (func_name == "main")
+    {
+        has_main = true;
+    }
+    asc += "\t.global " + func_name + "\n"; //      .global {func_name}
     asc += "\t.text\n";        
     asc += func_name + ":\n";               // {func_name}:
     asc += "\tpushq %rbp\n";                //      pushq %rbp
@@ -198,11 +215,20 @@ void ASGenerator::end_func(const std::string &func_name)
     paramOffset = 8;
 }
 
-void ASGenerator::dec_param(const std::string &param_name, const std::string &type)
+void ASGenerator::dec_param(const std::string &param_name, const std::string &size, const std::string &type)
 {
     paramOffset += 8;
-    symTable.insert(std::pair<std::string, VarSymbol>(param_name, VarSymbol(std::to_string(paramOffset) + "(%rbp)", type)));    // {var_name} : {mOffset}(%rbp)
-    localVar_set.insert(param_name);
+    dec_local_var(param_name, size, type);
+
+    asc += "\tmovq " + std::to_string(paramOffset) + "(%rbp)" + ", %rax\n";     //      movq {mOffset}(%rbp), %rax
+    if (isOneByteType(param_name))
+    {
+        asc += "\tmovb %al, " + getVarCode(param_name, true) + "\n";            //      movb %al, {param}
+    }
+    else
+    {
+        asc += "\tmovq %rax, " + getVarCode(param_name, true) + "\n";           //      movq %rax, {param}
+    }
 }
 
 void ASGenerator::param(const std::string &param_name)
@@ -665,21 +691,6 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";  //      movq %rax, {result}
     }
-}
-
-void ASGenerator::dec_mycc_putchar()
-{
-    asc +=  "\t.text\n"
-            "mycc_putchar:\n"
-            "\tpushq %rbp\n"
-            "\tmovq %rsp, %rbp\n"
-            "\tmovq $1, %rax\n"
-            "\tmovq $1, %rdi\n"
-            "\tleaq 16(%rbp), %rsi\n"
-            "\tmovq $1, %rdx\n"
-            "\tsyscall\n"
-            "\tleave\n"
-            "\tretq\n";
 }
 
 void ASGenerator::dec_start()

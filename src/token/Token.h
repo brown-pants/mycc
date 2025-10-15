@@ -66,6 +66,7 @@ public:
         While,      //  while
         Break,      //  break
         Return,     //  return
+        Extern,     //  extern
         Continue,   //  continue
 
         /* date type */

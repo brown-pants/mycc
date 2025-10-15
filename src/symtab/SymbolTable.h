@@ -9,11 +9,11 @@ class SymbolTable
 public:
     static SymbolTable &GetInstance();
     void insert(const std::string &symbol_name, const std::string &scope, Symbol *symbol);
+    void clear();
     Symbol *find(const std::string &symbol_name, const std::string &scope);
 
 private:
     SymbolTable();
-    ~SymbolTable();
     
     //                                 <    scope  , symbol  >
     using ScopeMap = std::unordered_map<std::string, Symbol *>;

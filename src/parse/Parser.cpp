@@ -90,32 +90,58 @@ bool Parser::hasError() const
 void Parser::initTable()
 {
     /* <program>:
-          type     ->      { <declaration_list> }
+          int      ->      { <declaration_list> }
+          char     ->      { <declaration_list> }
+          float    ->      { <declaration_list> }
+          void     ->      { <declaration_list> }
+          extern   ->      { <declaration_list> }
           $        ->      { ~ } 
     */
-    ASTable[program][Token::DT_int]                              = { Item{declaration_list, Vn} };       // type     ->      { <declaration_list> }
-    ASTable[program][Token::DT_char]                             = { Item{declaration_list, Vn} };
-    ASTable[program][Token::DT_float]                            = { Item{declaration_list, Vn} };
-    ASTable[program][Token::Void]                                = { Item{declaration_list, Vn} };
+    ASTable[program][Token::DT_int]                              = { Item{declaration_list, Vn} };       // int      ->      { <declaration_list> }
+    ASTable[program][Token::DT_char]                             = { Item{declaration_list, Vn} };       // char     ->      { <declaration_list> }
+    ASTable[program][Token::DT_float]                            = { Item{declaration_list, Vn} };       // float    ->      { <declaration_list> }
+    ASTable[program][Token::Void]                                = { Item{declaration_list, Vn} };       // void     ->      { <declaration_list> }
+    ASTable[program][Token::Extern]                              = { Item{declaration_list, Vn} };       // extern   ->      { <declaration_list> }
     ASTable[program][Token::Eof]                                 = { Item{Token::Nul, Vt} };             // $        ->      { ~ } 
     
     /* <declaration_list>:
-          type     ->      { <declaration> <declaration_list> }
+          int      ->      { <declaration> <declaration_list> }
+          char     ->      { <declaration> <declaration_list> }
+          float    ->      { <declaration> <declaration_list> }
+          void     ->      { <declaration> <declaration_list> }
+          extern   ->      { <declaration> <declaration_list> }
           $        ->      { ~ } 
     */
-    ASTable[declaration_list][Token::DT_int]                     = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // type     ->      { <declaration> <declaration_list> }
-    ASTable[declaration_list][Token::DT_char]                    = { Item{declaration, Vn}, Item{declaration_list, Vn} };
-    ASTable[declaration_list][Token::DT_float]                   = { Item{declaration, Vn}, Item{declaration_list, Vn} };
-    ASTable[declaration_list][Token::Void]                       = { Item{declaration, Vn}, Item{declaration_list, Vn} };
+    ASTable[declaration_list][Token::DT_int]                     = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // int      ->      { <declaration> <declaration_list> }
+    ASTable[declaration_list][Token::DT_char]                    = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // char     ->      { <declaration> <declaration_list> }
+    ASTable[declaration_list][Token::DT_float]                   = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // float    ->      { <declaration> <declaration_list> }
+    ASTable[declaration_list][Token::Void]                       = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // void     ->      { <declaration> <declaration_list> }
+    ASTable[declaration_list][Token::Extern]                     = { Item{declaration, Vn}, Item{declaration_list, Vn} };        // extern   ->      { <declaration_list> }
     ASTable[declaration_list][Token::Eof]                        = { Item{Token::Nul, Vt} };                                     // $ -> { ~ } 
 
     /*<declaration>:
-          type     ->      { type <is_pointer> id <dec_tail> }
+          int      ->      { <data_type> <is_pointer> id <dec_tail> }
+          char     ->      { <data_type> <is_pointer> id <dec_tail> }
+          float    ->      { <data_type> <is_pointer> id <dec_tail> }
+          void     ->      { <data_type> <is_pointer> id <dec_tail> }
+          extern   ->      { extern type <is_pointer> id <dec_tail> }
     */
-    ASTable[declaration][Token::DT_int]                          = { Item{Token::DT_int, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };        // type     ->      { type <is_pointer> id <dec_tail> }
-    ASTable[declaration][Token::DT_char]                         = { Item{Token::DT_char, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
-    ASTable[declaration][Token::DT_float]                        = { Item{Token::DT_float, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
-    ASTable[declaration][Token::Void]                            = { Item{Token::Void, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };
+    ASTable[declaration][Token::DT_int]                          = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                                // int      ->      { <data_type> <is_pointer> id <dec_tail> }
+    ASTable[declaration][Token::DT_char]                         = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                                // char     ->      { <data_type> <is_pointer> id <dec_tail> }
+    ASTable[declaration][Token::DT_float]                        = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                                // float    ->      { <data_type> <is_pointer> id <dec_tail> }
+    ASTable[declaration][Token::Void]                            = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };                                // void     ->      { <data_type> <is_pointer> id <dec_tail> }
+    ASTable[declaration][Token::Extern]                          = { Item{Token::Extern, Vt}, Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{dec_tail, Vn} };       // extern   ->      { extern type <is_pointer> id <dec_tail> }
+    
+    /*<data_type>:
+          int      ->      { int }
+          char     ->      { char }
+          float    ->      { float }
+          void     ->      { void }
+    */
+    ASTable[data_type][Token::DT_int]                            = { Item{Token::DT_int, Vt} };       // int      ->      { int }
+    ASTable[data_type][Token::DT_char]                           = { Item{Token::DT_char, Vt} };      // char     ->      { char }
+    ASTable[data_type][Token::DT_float]                          = { Item{Token::DT_float, Vt} };     // float    ->      { float }
+    ASTable[data_type][Token::Void]                              = { Item{Token::Void, Vt} };         // void     ->      { void }
 
     /*<is_pointer>:
           id       ->      { ~ }
@@ -127,31 +153,44 @@ void Parser::initTable()
     /*<dec_tail>:
           ;        ->      { ; }
           =        ->      { = <expression> ; }
-          [        ->      { [ num ] ; }        num: Integer
-          (        ->      { ( <params> ) <compound_stmt> }
+          [        ->      { [ <expression> ] ; }
+          (        ->      { ( <params> ) <func_tail> }
     */
     ASTable[dec_tail][Token::Semicolon]                          = { Item{Token::Semicolon, Vt} };                                                                                        // ;        ->      { ; }
     ASTable[dec_tail][Token::Eq]                                 = { Item{Token::Eq, Vt}, Item{expression, Vn}, Item{Token::Semicolon, Vt} };                                             // =        ->      { = <expression> ; }
-    ASTable[dec_tail][Token::OpenSquare]                         = { Item{Token::OpenSquare, Vt}, Item{Token::Integer, Vt}, Item{Token::CloseSquare, Vt}, Item{Token::Semicolon, Vt} };   // [        ->      { [ num ] ; }        num: Integer
-    ASTable[dec_tail][Token::OpenParen]                          = { Item{Token::OpenParen, Vt}, Item{params, Vn}, Item{Token::CloseParen, Vt}, Item{compound_stmt, Vn} };                // (        ->      { ( <params> ) <compound_stmt> }
+    ASTable[dec_tail][Token::OpenSquare]                         = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt}, Item{Token::Semicolon, Vt} };       // [        ->      { [ <expression> ] ; }
+    ASTable[dec_tail][Token::OpenParen]                          = { Item{Token::OpenParen, Vt}, Item{params, Vn}, Item{Token::CloseParen, Vt}, Item{func_tail, Vn} };                    // (        ->      { ( <params> ) <func_tail> }
+
+    /*<func_tail>:
+          ;        ->      { ; }
+          {        ->      { <compound_stmt> }
+    */
+    ASTable[func_tail][Token::Semicolon]                         = { Item{Token::Semicolon, Vt} };    // ;        ->      { ; }
+    ASTable[func_tail][Token::OpenBrance]                        = { Item{compound_stmt, Vn} };       // {        ->      { <compound_stmt> }
 
     /*<params>:
-          type     ->      { <param> <params_tail> }
+          int      ->      { <param> <params_tail> }
+          char     ->      { <param> <params_tail> }
+          float    ->      { <param> <params_tail> }
+          void     ->      { <param> <params_tail> }
           )        ->      { ~ }
     */
-    ASTable[params][Token::DT_int]                               = { Item{param, Vn}, Item{params_tail, Vn} };   // type     ->      { <param> <params_tail> }
-    ASTable[params][Token::DT_char]                              = { Item{param, Vn}, Item{params_tail, Vn} };
-    ASTable[params][Token::DT_float]                             = { Item{param, Vn}, Item{params_tail, Vn} };
-    ASTable[params][Token::Void]                                 = { Item{param, Vn}, Item{params_tail, Vn} };
+    ASTable[params][Token::DT_int]                               = { Item{param, Vn}, Item{params_tail, Vn} };   // int      ->      { <param> <params_tail> }
+    ASTable[params][Token::DT_char]                              = { Item{param, Vn}, Item{params_tail, Vn} };   // char     ->      { <param> <params_tail> }
+    ASTable[params][Token::DT_float]                             = { Item{param, Vn}, Item{params_tail, Vn} };   // float    ->      { <param> <params_tail> }
+    ASTable[params][Token::Void]                                 = { Item{param, Vn}, Item{params_tail, Vn} };   // void     ->      { <param> <params_tail> }
     ASTable[params][Token::CloseParen]                           = { Item{Token::Nul, Vt} };                     // )        ->      { ~ }
 
     /*<param>:
-          type     ->      { type <is_pointer> id }
+          int      ->      { <data_type> <is_pointer> id }
+          char     ->      { <data_type> <is_pointer> id }
+          float    ->      { <data_type> <is_pointer> id }
+          void     ->      { <data_type> <is_pointer> id }
     */
-    ASTable[param][Token::DT_int]                                = { Item{Token::DT_int, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };     // type     ->      { type <is_pointer> id }
-    ASTable[param][Token::DT_char]                               = { Item{Token::DT_char, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };
-    ASTable[param][Token::DT_float]                              = { Item{Token::DT_float, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };
-    ASTable[param][Token::Void]                                  = { Item{Token::Void, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };
+    ASTable[param][Token::DT_int]                                = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };  // int      ->      { <data_type> <is_pointer> id }
+    ASTable[param][Token::DT_char]                               = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };  // char     ->      { <data_type> <is_pointer> id }
+    ASTable[param][Token::DT_float]                              = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };  // float    ->      { <data_type> <is_pointer> id }
+    ASTable[param][Token::Void]                                  = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt} };  // void     ->      { <data_type> <is_pointer> id }
 
     /*<params_tail>:
           )        ->      { ~ }
@@ -228,7 +267,10 @@ void Parser::initTable()
           -        ->      { <compound> <compound_list> }
           *        ->      { <compound> <compound_list> }
           &        ->      { <compound> <compound_list> }
-          type     ->      { <compound> <compound_list> }
+          int      ->      { <compound> <compound_list> }
+          char     ->      { <compound> <compound_list> }
+          float    ->      { <compound> <compound_list> }
+          void     ->      { <compound> <compound_list> }
           id       ->      { <compound> <compound_list> }
           ;        ->      { <compound> <compound_list> }
           num      ->      { <compound> <compound_list> }
@@ -246,10 +288,10 @@ void Parser::initTable()
     ASTable[compound_list][Token::Minus]                         = { Item{compound, Vn}, Item{compound_list, Vn} };      // -        ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Mult]                          = { Item{compound, Vn}, Item{compound_list, Vn} };      // *        ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Ampersand]                     = { Item{compound, Vn}, Item{compound_list, Vn} };      // &        ->      { <compound> <compound_list> }
-    ASTable[compound_list][Token::DT_int]                        = { Item{compound, Vn}, Item{compound_list, Vn} };      // type     ->      { <compound> <compound_list> }
-    ASTable[compound_list][Token::DT_char]                       = { Item{compound, Vn}, Item{compound_list, Vn} };
-    ASTable[compound_list][Token::DT_float]                      = { Item{compound, Vn}, Item{compound_list, Vn} };
-    ASTable[compound_list][Token::Void]                          = { Item{compound, Vn}, Item{compound_list, Vn} };
+    ASTable[compound_list][Token::DT_int]                        = { Item{compound, Vn}, Item{compound_list, Vn} };      // int      ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::DT_char]                       = { Item{compound, Vn}, Item{compound_list, Vn} };      // char     ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::DT_float]                      = { Item{compound, Vn}, Item{compound_list, Vn} };      // float    ->      { <compound> <compound_list> }
+    ASTable[compound_list][Token::Void]                          = { Item{compound, Vn}, Item{compound_list, Vn} };      // void     ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Identifier]                    = { Item{compound, Vn}, Item{compound_list, Vn} };      // id       ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Semicolon]                     = { Item{compound, Vn}, Item{compound_list, Vn} };      // ;        ->      { <compound> <compound_list> }
     ASTable[compound_list][Token::Integer]                       = { Item{compound, Vn}, Item{compound_list, Vn} };      // num      ->      { <compound> <compound_list> }
@@ -267,7 +309,10 @@ void Parser::initTable()
     ASTable[compound_list][Token::Continue]                      = { Item{compound, Vn}, Item{compound_list, Vn} };      // continue ->      { <compound> <compound_list> }
 
     /*<compound>:
-          type     ->      { <var_dec> }
+          int      ->      { <var_dec> }
+          char     ->      { <var_dec> }
+          float    ->      { <var_dec> }
+          void     ->      { <var_dec> }
           !        ->      { <statement> }
           -        ->      { <statement> }
           *        ->      { <statement> }
@@ -284,10 +329,10 @@ void Parser::initTable()
           break    ->      { <statement> }
           continue ->      { <statement> }
     */
-    ASTable[compound][Token::DT_int]                             = { Item{var_dec, Vn} };        // type     ->      { <var_dec> }
-    ASTable[compound][Token::DT_char]                            = { Item{var_dec, Vn} };
-    ASTable[compound][Token::DT_float]                           = { Item{var_dec, Vn} };
-    ASTable[compound][Token::Void]                               = { Item{var_dec, Vn} };
+    ASTable[compound][Token::DT_int]                             = { Item{var_dec, Vn} };        // int      ->      { <var_dec> }
+    ASTable[compound][Token::DT_char]                            = { Item{var_dec, Vn} };        // char     ->      { <var_dec> }
+    ASTable[compound][Token::DT_float]                           = { Item{var_dec, Vn} };        // float    ->      { <var_dec> }
+    ASTable[compound][Token::Void]                               = { Item{var_dec, Vn} };        // void     ->      { <var_dec> }
     ASTable[compound][Token::Not]                                = { Item{statement, Vn} };      // !        ->      { <statement> }
     ASTable[compound][Token::Minus]                              = { Item{statement, Vn} };      // -        ->      { <statement> }
     ASTable[compound][Token::Mult]                               = { Item{statement, Vn} };      // *        ->      { <statement> }
@@ -308,20 +353,23 @@ void Parser::initTable()
     ASTable[compound][Token::Continue]                           = { Item{statement, Vn} };      // continue ->      { <statement> }
 
     /*<var_dec>:
-          type     ->      { type <is_pointer> id <var_dec_tail> ; }
+          int      ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+          char     ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+          float    ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+          void     ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
     */
-    ASTable[var_dec][Token::DT_int]                              = { Item{Token::DT_int, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // type     ->      { type <is_pointer> id <var_dec_tail> ; }
-    ASTable[var_dec][Token::DT_char]                             = { Item{Token::DT_char, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
-    ASTable[var_dec][Token::DT_float]                            = { Item{Token::DT_float, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
-    ASTable[var_dec][Token::Void]                                = { Item{Token::Void, Vt}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };
+    ASTable[var_dec][Token::DT_int]                              = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // int      ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+    ASTable[var_dec][Token::DT_char]                             = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // char     ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+    ASTable[var_dec][Token::DT_float]                            = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // float    ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
+    ASTable[var_dec][Token::Void]                                = { Item{data_type, Vn}, Item{is_pointer, Vn}, Item{Token::Identifier, Vt}, Item{var_dec_tail, Vn}, Item{Token::Semicolon, Vt} };         // void     ->      { <data_type> <is_pointer> id <var_dec_tail> ; }
 
     /*<var_dec_tail>:
           ;        ->      { ~ }
-          [        ->      { [ num ] }          num: Integer
+          [        ->      { [ <expression> ] }
           =        ->      { = <expression> }
     */
     ASTable[var_dec_tail][Token::Semicolon]                      = { Item{Token::Nul, Vt} };                                                                     // ;        ->      { ~ }
-    ASTable[var_dec_tail][Token::OpenSquare]                     = { Item{Token::OpenSquare, Vt}, Item{Token::Integer, Vt}, Item{Token::CloseSquare, Vt} };      // [        ->      { [ num ] }          num: Integer
+    ASTable[var_dec_tail][Token::OpenSquare]                     = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt} };          // [        ->      { [ <expression> ] }
     ASTable[var_dec_tail][Token::Eq]                             = { Item{Token::Eq, Vt}, Item{expression, Vn} };                                                // =        ->      { = <expression> }
     
     /*<selection_stmt>:
@@ -334,7 +382,10 @@ void Parser::initTable()
           -        ->      { ~ }
           *        ->      { ~ }
           &        ->      { ~ }
-          type     ->      { ~ }
+          int      ->      { ~ }
+          char     ->      { ~ }
+          float    ->      { ~ }
+          void     ->      { ~ }
           id       ->      { ~ }
           ;        ->      { ~ }
           num      ->      { ~ }
@@ -353,10 +404,10 @@ void Parser::initTable()
     ASTable[else_part][Token::Minus]                             = { Item{Token::Nul, Vt} };                             // -        ->      { ~ }
     ASTable[else_part][Token::Mult]                              = { Item{Token::Nul, Vt} };                             // *        ->      { ~ }
     ASTable[else_part][Token::Ampersand]                         = { Item{Token::Nul, Vt} };                             // &        ->      { ~ }
-    ASTable[else_part][Token::DT_int]                            = { Item{Token::Nul, Vt} };                             // type     ->      { ~ }
-    ASTable[else_part][Token::DT_char]                           = { Item{Token::Nul, Vt} };
-    ASTable[else_part][Token::DT_float]                          = { Item{Token::Nul, Vt} };
-    ASTable[else_part][Token::Void]                              = { Item{Token::Nul, Vt} };
+    ASTable[else_part][Token::DT_int]                            = { Item{Token::Nul, Vt} };                             // int      ->      { ~ }
+    ASTable[else_part][Token::DT_char]                           = { Item{Token::Nul, Vt} };                             // char      ->      { ~ }
+    ASTable[else_part][Token::DT_float]                          = { Item{Token::Nul, Vt} };                             // float      ->      { ~ }
+    ASTable[else_part][Token::Void]                              = { Item{Token::Nul, Vt} };                             // void      ->      { ~ }
     ASTable[else_part][Token::Identifier]                        = { Item{Token::Nul, Vt} };                             // id       ->      { ~ }
     ASTable[else_part][Token::Semicolon]                         = { Item{Token::Nul, Vt} };                             // ;        ->      { ~ }
     ASTable[else_part][Token::Integer]                           = { Item{Token::Nul, Vt} };                             // num      ->      { ~ }

@@ -13,6 +13,7 @@ Lexer::Lexer(const std::string &source)
         { "while", Token(Token::While, "while", 0) },
         { "break", Token(Token::Break, "break", 0) },
         { "return", Token(Token::Return, "return", 0) },
+        { "extern", Token(Token::Extern, "extern", 0) },
         { "continue", Token(Token::Continue, "continue", 0) },
         { "int", Token(Token::DT_int, "int", 0) },
         { "char", Token(Token::DT_char, "char", 0) },

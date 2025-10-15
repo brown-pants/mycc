@@ -6,6 +6,7 @@
 #include <string>
 #include <stack>
 #include <unordered_map>
+#include <unordered_set>
 
 class TACGenerator
 {
@@ -14,11 +15,12 @@ public:
     {
         Op_global_init, // define a global variable and assign an initial value: arg1 = initial_value, arg2 = type, result = varName
         Op_global_var,  // define a global variable : arg1 = size, arg2 = type, result = varName
+        Op_extern_var,  // declare a extern var : arg1 = type, result = varName
         Op_dec_string,  // define a string : result = strName, arg1 = string
         Op_local_var,   // define a local variable : arg1 = size, arg2 = type, result = varName
         Op_begin_func,  // begin of function : result = funcName
         Op_end_func,    // end of function : result = funcName
-        Op_dec_param,   // define a param : result = paramName, arg1 = type
+        Op_dec_param,   // define a param : result = paramName, arg1 = size, arg2 = type
         Op_param,       // pasing parameters : param result
         Op_label,       // result = label_name
         Op_goto,        // goto result
@@ -68,6 +70,7 @@ private:
     std::unordered_map<Token::Type, unsigned int> dataSizeMap;
     std::unordered_map<std::string, unsigned int> pointerTemps;
     std::unordered_map<std::string, std::string> strNames;
+    std::unordered_set<std::string> definedFunctions;
     std::vector<Quaternion> code;
 
     std::string new_temp();
@@ -79,7 +82,7 @@ private:
     void generate_3ac(const Parser::TreeNode &node);
     void dec_var(bool local, const Token &type, const Token &id, const std::string &value = "", const std::string &arr_ptr = "", int arrSize = 1);
     void dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail);
-    void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type);
+    void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type, bool defineParams = true);
     std::string do_expression(const Parser::TreeNode &node);
     std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id);
     int passing_params(const Parser::TreeNode &node);

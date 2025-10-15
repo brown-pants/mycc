@@ -16,7 +16,6 @@ TACGenerator::TACGenerator(const Parser::TreeNode &root)
 
 const std::vector<TACGenerator::Quaternion> &TACGenerator::exec()
 {
-    SymbolTable::GetInstance().insert("mycc_putchar", ".global", new FunctionSymbol(Token::Void, false, std::vector<Token::Type>{ Token::DT_int }));
     generate_3ac(root);
     return code;
 }
@@ -90,20 +89,51 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         }
         break;
     }
-    /* <declaration> -> type <is_pointer> id <dec_tail> */
+    /* <declaration> -> <data_type> <is_pointer> id <dec_tail> | extern <data_type> <is_pointer> id <dec_tail> */
     case Parser::declaration:
     {
-        const Token &type = node.tokens[0];
-        const Token &id = node.tokens[1];
-        const Parser::TreeNode &is_pointer = node.childs[0];
-        const Parser::TreeNode &dec_tail = node.childs[1];
+        bool has_extern = false;
+        if (node.tokens[0].type() == Token::Extern)
+        {
+            has_extern = true;
+        }
+        const Parser::TreeNode &data_type = node.childs[0];
+        const Parser::TreeNode &is_pointer = node.childs[1];
+        const Parser::TreeNode &dec_tail = node.childs[2];
+        const Token &id = node.tokens[0 + has_extern];
+        const Token &type = data_type.tokens[0];
         /* <is_pointer> -> * | ~ */
         bool isPointer = (is_pointer.tokens.empty() ? false : true);
         /* <dec_tail> -> ; */
         if (dec_tail.tokens[0].type() == Token::Semicolon)
         {
+            // extern var;
+            if (has_extern)
+            {
+                Symbol *sym = SymbolTable::GetInstance().find(id.lexeme(), scopeStack.top());
+                std::string data_type;
+                if (sym != nullptr)
+                {
+                    Debug::Redeclare(id);
+                    m_hasError = true;
+                    break;
+                }
+                if (isPointer)
+                {
+                    sym = new PtrSymbol(type.type(), id.lexeme());
+                    data_type = "ptr_";
+                }
+                else
+                {
+                    sym = new VarSymbol(type.type(), id.lexeme());
+                    data_type = "var_";
+                }
+                SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), sym);
+                data_type += (type.type() == Token::DT_int ? "int" : "char");
+                code.push_back({ Op_extern_var, data_type, "", id.lexeme() });
+            }
             // dec ptr
-            if (isPointer)
+            else if (isPointer)
             {
                 dec_var(false, type, id, "", "ptr");
             }
@@ -116,6 +146,12 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         /* <dec_tail> -> = <expression> ; */
         else if (dec_tail.tokens[0].type() == Token::Eq)
         {
+            // extern var = ...;
+            if (has_extern)
+            {
+                Debug::InvalidOperands(dec_tail.tokens[0]);
+                m_hasError = true;
+            }
             std::string value = "";
             const Parser::TreeNode &expression = dec_tail.childs[0];
             value = do_expression(expression);
@@ -135,20 +171,54 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 dec_var(false, type, id, value);
             }
         }
-        /* <dec_tail> -> [ num ] ; */
+        /* <dec_tail> -> [ <expression> ] ; */
         else if (dec_tail.tokens[0].type() == Token::OpenSquare)
         {
-            if (isPointer)
+            const Parser::TreeNode &expression = dec_tail.childs[0];
+            std::string num = do_expression(expression);
+            if (!isNumber(num))
+            {
+                Debug::NotConstant(id);
+                m_hasError = true;
+                num = "0";
+            }
+            int size = std::stoll(num);
+            // extern arr[N];
+            if (has_extern)
+            {
+                Symbol *sym = SymbolTable::GetInstance().find(id.lexeme(), scopeStack.top());
+                std::string data_type = "arr_";
+                if (sym != nullptr)
+                {
+                    Debug::Redeclare(id);
+                    m_hasError = true;
+                    break;
+                }
+                if (isPointer)
+                {
+                    // Sorry, pointer arrays are not currently supported.
+                    m_hasError = true;
+                    Debug::NotSupportedPointerArray(id);
+                }
+                else
+                {
+                    sym = new ArrSymbol(type.type(), size, id.lexeme());
+                    data_type += (type.type() == Token::DT_int ? "int" : "char");
+                    code.push_back({ Op_extern_var, data_type, "", id.lexeme() });
+                    SymbolTable::GetInstance().insert(id.lexeme(), scopeStack.top(), sym);
+                    return;
+                }
+            }
+            else if (isPointer)
             {
                 // Sorry, pointer arrays are not currently supported.
                 m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
             }
             // dec arr
-            const Token &num = dec_tail.tokens[1];
-            dec_var(false, type, id, "", "arr", std::stoll(num.lexeme()));
+            dec_var(false, type, id, "", "arr", size);
         }
-        /* ( <params> ) <compound_stmt> */
+        /* ( <params> ) <func_tail> */
         else if (dec_tail.tokens[0].type() == Token::OpenParen)
         {
             if (type.type() == Token::Void && isPointer)
@@ -173,13 +243,14 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         scopeStack.pop();
         break;
     }
-    /* <var_dec> -> type <is_pointer> id <var_dec_tail> ; */
+    /* <var_dec> -> <data_type> <is_pointer> id <var_dec_tail> ; */
     case Parser::var_dec:
     {
-        const Token &type = node.tokens[0];
-        const Token &id = node.tokens[1];
-        const Parser::TreeNode &is_pointer = node.childs[0];
-        const Parser::TreeNode &var_dec_tail = node.childs[1];
+        const Parser::TreeNode &data_type = node.childs[0];
+        const Parser::TreeNode &is_pointer = node.childs[1];
+        const Parser::TreeNode &var_dec_tail = node.childs[2];
+        const Token &id = node.tokens[0];
+        const Token &type = data_type.tokens[0];
         /* <is_pointer> -> * | ~ */
         bool isPointer = (is_pointer.tokens.empty() ? false : true);
         /* <var_dec_tail> -> ~ */
@@ -212,17 +283,24 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 dec_var(true, type, id, value);
             }
         }
-        /* <var_dec_tail> -> [ num ] */
+        /* <var_dec_tail> -> [ <expression> ] */
         else
         {
+            const Parser::TreeNode &expression = var_dec_tail.childs[0];
+            std::string num = do_expression(expression);
+            if (!isNumber(num))
+            {
+                Debug::NotConstant(id);
+                m_hasError = true;
+                num = "0";
+            }
             if (isPointer)
             {
                 // Sorry, pointer arrays are not currently supported.
                 m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
             }
-            const Token &num = var_dec_tail.tokens[1];
-            dec_var(true, type, id, "", "arr", std::stoll(num.lexeme()));
+            dec_var(true, type, id, "", "arr", std::stoll(num));
         }
         break;
     }
@@ -448,32 +526,80 @@ void TACGenerator::dec_var(bool local, const Token &type, const Token &id, const
 void TACGenerator::dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail)
 {
     curFunName = id.lexeme();
+    FunctionSymbol *func_sym = static_cast<FunctionSymbol *>(SymbolTable::GetInstance().find(curFunName, ".global"));
 
+    // <dec_tail> -> ( <params> ) <func_tail>
+    const Parser::TreeNode &params = dec_tail.childs[0];
+    const Parser::TreeNode &func_tail = dec_tail.childs[1];
+
+    // <func_tail> -> ;
+    if (func_tail.childs.empty())
+    {
+        std::vector<Token::Type> params_type;
+        dec_params(params, params_type, false); // get params type without defining
+        const FunctionSymbol &sym = FunctionSymbol(type.type(), returnPointer, params_type);
+        if (func_sym != nullptr && *func_sym != sym)
+        {
+            Debug::Redeclare(id);
+            m_hasError = true;
+        }
+        else if (func_sym == nullptr)
+        {
+            SymbolTable::GetInstance().insert(curFunName, ".global", new FunctionSymbol(type.type(), returnPointer, params_type));
+        }
+        return;
+    }
+
+    // <func_tail> -> <compound_stmt>
+    const Parser::TreeNode &compound_stmt = func_tail.childs[0];
     code.push_back({ Op_begin_func, "", "", curFunName });
     scopeStack.push(curFunName + "~1"); // push scope '{func name}~1'
 
     scope_counter = 1;
 
+    if (definedFunctions.find(curFunName) != definedFunctions.end())
+    {
+        Debug::Redeclare(id);
+        m_hasError = true;
+        scopeStack.pop();
+        return;
+    }
+
     std::vector<Token::Type> params_type;
-    dec_params(dec_tail.childs[0], params_type); // <params>
-    SymbolTable::GetInstance().insert(curFunName, ".global", new FunctionSymbol(type.type(), returnPointer, params_type));
+    dec_params(params, params_type);
+
+    const FunctionSymbol &sym = FunctionSymbol(type.type(), returnPointer, params_type);
+    if ((func_sym != nullptr && *func_sym != sym))
+    {
+        Debug::Redeclare(id);
+        m_hasError = true;
+        scopeStack.pop();
+        return;
+    }
+
+    definedFunctions.insert(curFunName);
+    if (func_sym == nullptr)
+    {
+        SymbolTable::GetInstance().insert(curFunName, ".global", new FunctionSymbol(type.type(), returnPointer, params_type));
+    }
 
     scope_counter = 0;
-    generate_3ac(dec_tail.childs[1]);   // <compound_stmt>
+    generate_3ac(compound_stmt);
     
     code.push_back({ Op_label, "", "", curFunName + "_exit" }); // func_exit:
 
     code.push_back({ Op_end_func, "", "", curFunName });
 }
 
-void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type)
+void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type, bool defineParams)
 {
-    /* <param> -> type <is_pointer> id */
+    /* <param> -> <data_type> <is_pointer> id */
     if (node.vn_type == Parser::param)
     {
-        const Token &type = node.tokens[0];
-        const Token &id = node.tokens[1];
-        const Parser::TreeNode &is_pointer = node.childs[0];
+        const Parser::TreeNode &data_type = node.childs[0];
+        const Parser::TreeNode &is_pointer = node.childs[1];
+        const Token &id = node.tokens[0];
+        const Token &type = data_type.tokens[0];
         /* <is_pointer> -> * | ~ */
         bool isPointer = (is_pointer.tokens.empty() ? false : true);
 
@@ -484,13 +610,13 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
             m_hasError = true;
             return;
         }
-        else if (SymbolTable::GetInstance().find(varName, scopeStack.top()) != nullptr)
+        else if (defineParams && SymbolTable::GetInstance().find(varName, scopeStack.top()) != nullptr)
         {
             Debug::Redeclare(id);
             m_hasError = true;
             return;
         }
-        else
+        else if (defineParams)
         {
             std::string newName = varName + "~" + std::to_string(scope_counter);
             Symbol *symbol = nullptr;
@@ -504,25 +630,29 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
             }
             SymbolTable::GetInstance().insert(varName, scopeStack.top(), symbol);
             std::string data_type;
+            std::string size;
             if (type.type() == Token::DT_char)
             {
                 data_type = "char";
+                size = "1";
             }
             else
             {
                 data_type = "int";
+                size = "8";
             }
             if (isPointer)
             {
                 data_type = "ptr_" + data_type;
+                size = "8";
             }
             else
             {
                 data_type = "var_" + data_type;
             }
-            code.push_back({ Op_dec_param, data_type, "", newName });
-            params_type.push_back(type.type());
+            code.push_back({ Op_dec_param, size, data_type, newName });
         }
+        params_type.push_back(type.type());
     }
     else
     {
@@ -530,7 +660,7 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
         /* <params_tail> -> , <param> <params_tail> | ~ */
         for (const Parser::TreeNode &child : node.childs)
         {
-            dec_params(child, params_type);
+            dec_params(child, params_type, defineParams);
         }
     }
 
@@ -1014,7 +1144,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Token &ampersand = node.tokens[0];
             const Parser::TreeNode &factor = node.childs[0];
             std::string addr = do_expression(factor);
-            if (isNumber(addr) || getPointerStride(addr) != 0 || addr[0] == '&' || addr.substr(0, 2) == "t^")
+            if (getPointerStride(addr) != 0 || addr[0] == '&' || addr.substr(0, 2) == "t^")
             {
                 Debug::InvalidOperands(ampersand);
                 m_hasError = true;
@@ -1035,7 +1165,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             const Token &star = node.tokens[0];
             const Parser::TreeNode &factor = node.childs[0];
             std::string addr = do_expression(factor);
-            if (isNumber(addr) || getPointerStride(addr) == 0)
+            if (getPointerStride(addr) == 0)
             {
                 Debug::InvalidOperands(star);
                 m_hasError = true;

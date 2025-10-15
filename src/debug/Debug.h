@@ -27,6 +27,7 @@ public:
     static void InvalidOperands(const Token &token);
     static void InitialNotConstant(const Token &token);
     static void NotWithinLoop(const Token &token);
+    static void NotConstant(const Token &token);
 
     static void SetCurrentFile(const std::string &file);
 

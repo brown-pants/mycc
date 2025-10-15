@@ -28,15 +28,17 @@ private:
     int mOffset;
     int paramOffset;
     int sub_rsp_pos;
+    bool has_main;
 
     std::string getVarCode(const std::string &var, bool isWrite = false);
     void dec_global_init(const std::string &var_name, const std::string &value, const std::string &type);
     void dec_global_var(const std::string &var_name, const std::string &size, const std::string &type);
+    void dec_extern_var(const std::string &var_name, const std::string &type);
     void dec_string(const std::string &str_name, const std::string &string);
     void dec_local_var(const std::string &var_name, const std::string &size, const std::string &type);
     void begin_func(const std::string &func_name);
     void end_func(const std::string &func_name);
-    void dec_param(const std::string &param_name, const std::string &type);
+    void dec_param(const std::string &param_name, const std::string &size, const std::string &type);
     void param(const std::string &param_name);
     void label(const std::string &label_name);
     void goto_label(const std::string &label_name);
@@ -48,7 +50,6 @@ private:
     void arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
     void relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
 
-    void dec_mycc_putchar();
     void dec_start();
 
     bool isOutOfInt32Range(int64_t number) const;
