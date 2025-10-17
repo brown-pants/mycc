@@ -2,15 +2,16 @@
 #include <limits>
 
 ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac)
-    : tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0), has_main(false)
+    : regAllocator(tac), tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0), has_main(false), save_reg_pos(-1), call_func_end_pos(0)
 {
-
+    regAllocator.exec();
 }
 
 std::string ASGenerator::exec()
 {
-    for (const TACGenerator::Quaternion &code : tac)
+    for (int idx = 0; idx < tac.size(); idx ++)
     {
+        const TACGenerator::Quaternion &code = tac[idx];
         switch(code.op)
         {
         case TACGenerator::Op_global_init:
@@ -61,6 +62,12 @@ std::string ASGenerator::exec()
         case TACGenerator::Op_neg:
             negate(code.arg1, code.result);
             break;
+        case TACGenerator::Op_address:
+            address(code.arg1, code.result);
+            break;
+        case TACGenerator::Op_ref:
+            reference(code.arg1, code.result);
+            break;
         case TACGenerator::Op_add:
             arithmetic("+", code.arg1, code.arg2, code.result);
             break;
@@ -95,6 +102,12 @@ std::string ASGenerator::exec()
             relational("<=", code.arg1, code.arg2, code.result);
             break;
         }
+        // free var regs
+        auto regs = regAllocator.freeVarRegs(idx);
+        for (auto reg : regs)
+        {
+            m_currentVarRegs.erase(reg);
+        }
     }
     if (has_main)
     {
@@ -109,37 +122,13 @@ std::string ASGenerator::getVarCode(const std::string &var, bool isWrite)
     {
         return "%rax";
     }
-    if (var[0] == '*')
-    {
-        std::string var_name = var.substr(1);
-        std::string addr = symTable[var_name].addr;
-        asc += "\tmovq " + addr + ", %rbx\n";  // movq {addr}, %rbx
-        if (isWrite)
-        {
-            return "(%rbx)";
-        }
-        static int counter = 0;
-        std::string ref_temp = "ref~" + std::to_string(counter ++);
-        dec_local_var(ref_temp, isOneByteType(var) ? "1" : "8", getSymbolType(var));
-        std::string ref_temp_code = symTable[ref_temp].addr;
-        asc += "\tmovq (%rbx), %rbx\n";                 // movq (%rbx), %rbx
-        asc += "\tmovq %rbx, " + ref_temp_code + "\n";  // movq %rbx, {ref_temp_code}
-        return ref_temp_code;
-    }
-    if (var[0] == '&')
-    {
-        std::string var_name = var.substr(1);
-        std::string addr = symTable[var_name].addr;
-        static int counter = 0;
-        std::string ptr_temp = "ptr~" + std::to_string(counter ++);
-        dec_local_var(ptr_temp, "8", getSymbolType(var));
-        std::string ptr_temp_code = symTable[ptr_temp].addr;
-        asc += "\tleaq " + addr + ", %rax\n";           // leaq {addr}, %rax
-        asc += "\tmovq %rax, " + ptr_temp_code + "\n";  // movq %rax, {ptr_temp_code}
-        return ptr_temp_code;
-    }
     // normal variable
-    return symTable[var].addr;
+    auto iter = symTable.find(var);
+    if (iter != symTable.end())
+    {
+        return iter->second.addr;
+    }
+    return "";
 }
 
 void ASGenerator::dec_global_init(const std::string &var_name, const std::string &value, const std::string &type)
@@ -219,46 +208,65 @@ void ASGenerator::dec_param(const std::string &param_name, const std::string &si
 {
     paramOffset += 8;
     dec_local_var(param_name, size, type);
+    std::string addr = getVarCode(param_name);
 
-    asc += "\tmovq " + std::to_string(paramOffset) + "(%rbp)" + ", %rax\n";     //      movq {mOffset}(%rbp), %rax
+    RegId regid = getTempReg();
+    std::string reg64 = regAllocator.toReg64(regid);
+    std::string reg8 = regAllocator.toReg8(regid);
+
+    asc += "\tmovq " + std::to_string(paramOffset) + "(%rbp)" + ", " + reg64 + "\n";    //      movq {mOffset}(%rbp), {reg64}
     if (isOneByteType(param_name))
     {
-        asc += "\tmovb %al, " + getVarCode(param_name, true) + "\n";            //      movb %al, {param}
+        asc += "\tmovb " + reg8 + ", " + addr + "\n";                                   //      movb {reg8}, {param}
     }
     else
     {
-        asc += "\tmovq %rax, " + getVarCode(param_name, true) + "\n";           //      movq %rax, {param}
+        asc += "\tmovq " + reg64 + ", " + addr + "\n";                                  //      movq {reg64}, {param}
     }
+    freeTempRegs();
 }
 
 void ASGenerator::param(const std::string &param_name)
 {
+    if (save_reg_pos < 0)
+    {
+        save_reg_pos = asc.length();
+    }
+
+    std::string param_code = getVarCode(param_name);
     bool paramOneByte = isOneByteType(param_name);
+
     // param_name is a number
     if (isNumber(param_name))
     {
         // out of int32 range
-        if (isNumber(param_name) && isOutOfInt32Range(std::stoll(param_name)))
+        if (isOutOfInt32Range(std::stoll(param_name)))
         {
-            asc += "\tmovabsq $" + param_name + ", %rax\n";         //      movabsq ${int64}, %rax
-            asc += "\tpushq %rax\n";                                //      pushq %rax
+            RegId regid = getTempReg();
+            std::string reg64 = regAllocator.toReg64(regid);
+            asc += "\tmovabsq $" + param_name + ", " + reg64 + "\n";        //      movabsq ${int64}, {reg64}
+            asc += "\tpushq " + reg64 + "\n";                               //      pushq {reg64}
         }
         else
         {
-            asc += "\tpushq $" + param_name + "\n";                 //      pushq ${int32}
+            asc += "\tpushq $" + param_name + "\n";                         //      pushq ${int32}
         }
     }
-    // param_name is a one byte variable
-    else if (paramOneByte)
+    // param_name is a one byte variable and is not a register
+    else if (paramOneByte && !isRegister(param_code))
     {
-        asc += "\tmovsbq " + getVarCode(param_name) + ", %rax\n";   //      movsbq {addr}, %rax
-        asc += "\tpushq %rax\n";                                     //      pushq %rax
+        RegId regid = getTempReg();
+        std::string reg64 = regAllocator.toReg64(regid);
+        asc += "\tmovsbq " + param_code + ", " + reg64 + "\n";              //      movsbq {addr}, {reg64}
+        asc += "\tpushq " + reg64 + "\n";                                   //      pushq {reg64}
     }
     // param_name is a eight bytes variable
     else
     {
-        asc += "\tpushq " + getVarCode(param_name) + "\n";          //      pushq {addr}
+        asc += "\tpushq " + param_code + "\n";                              //      pushq {addr}
     }
+
+    freeTempRegs();
 }
 
 void ASGenerator::label(const std::string &label_name)
@@ -273,15 +281,16 @@ void ASGenerator::goto_label(const std::string &label_name)
 
 void ASGenerator::if_goto(const std::string &condition, const std::string &label)
 {
+    std::string result_code = getVarCode(condition);
     if (isOneByteType(condition))
     {
-        asc += "\tcmpb $0, " + getVarCode(condition) + "\n";    //      cmpb $0, {condition}
+        asc += "\tcmpb $0, " + result_code + "\n";      //      cmpb $0, {condition}
     }
     else
     {
-        asc += "\tcmpq $0, " + getVarCode(condition) + "\n";    //      cmpq $0, {condition}
+        asc += "\tcmpq $0, " + result_code + "\n";      //      cmpq $0, {condition}
     }
-    asc += "\tjne " + label + "\n";                         //      jne {label}
+    asc += "\tjne " + label + "\n";                     //      jne {label}
 }
 
 void ASGenerator::assign(const std::string &arg, const std::string &result)
@@ -291,75 +300,191 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
     {
         std::string argType = getSymbolType(arg);
         std::string argPrefix = argType.substr(0, argType.find('_'));
-        if (argPrefix == "ptr")
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
         {
-            dec_local_var(result, "8", argType);
+            dec_local_var(result, "8", argPrefix == "ptr" ? argType : "var_int");
         }
         else
         {
-            dec_local_var(result, "8", "var_int");
+            setRegister(result, regid, argPrefix == "ptr" ? argType : "var_int");
         }
     }
-    bool resultOneByte = isOneByteType(result);
-    // arg is a number
-    if (isNumber(arg))
+
+    std::string result_code;
+    // result is a reference
+    if (result[0] == '*')
     {
-        // out of int32 range
-        if (isOutOfInt32Range(std::stoll(arg)))
+        std::string ptr_name = result.substr(1);
+        std::string ptr_code = getVarCode(ptr_name);
+        // (reg) -> *ptr
+        if (isRegister(ptr_code))
         {
-            asc += "\tmovabsq $" + arg + ", %rax\n";                            //      movabsq ${int64}, %rax
-            if (resultOneByte)
+            result_code = '(' + ptr_code + ')';
+            m_ignoreRegs.insert(regAllocator.getRegId(ptr_code));
+        }
+        else
+        {
+            RegId regid;
+            regid = getTempReg();
+            std::string regStr = regAllocator.toReg64(regid);
+            asc += "\tmovq " + ptr_code + ", " + regStr + "\n";     // movq {ptr_code}, {regStr}
+            result_code = '(' + regStr + ')';
+        }
+    }
+    else
+    {
+        result_code = getVarCode(result);
+    }
+
+    if (arg == "~ret")
+    {
+        asc.insert(call_func_end_pos, "\tmovq %rax, " + result_code + "\n");
+        return;
+    }
+    
+    std::string arg_code = getVarCode(arg);
+    bool argOneByte = isOneByteType(arg);
+    bool resultOneByte = isOneByteType(result);
+    // result is a register
+    if (isRegister(result_code))
+    {
+        // arg is a number
+        if (isNumber(arg))
+        {
+            // out of int32 range
+            if (isOutOfInt32Range(std::stoll(arg)))
             {
-                asc += "\tmovb %al, " + getVarCode(result, true) + "\n";        //      movb %al, {result}
+                asc += "\tmovabsq $" + arg + ", " + result_code + "\n";     //      movabsq ${int64}, {result_code}
             }
             else
             {
-                asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";       //      movq %rax, {result}
+                asc += "\tmovq $" + arg + ", " + result_code + "\n";        //      movq ${int32}, {result_code}
             }
         }
-        else if(resultOneByte)
-        {
-            asc += "\tmovq $" + arg + ", %rax\n";                               //      movq ${int32}, %rax
-            asc += "\tmovb %al, " + getVarCode(result, true) + "\n";            //      movb %al, {result}
-        }
+        // arg is a variable
         else
         {
-            asc += "\tmovq $" + arg + ", " + getVarCode(result, true) + "\n";   //      movq ${int32}, {result}
+            if (argOneByte && !isRegister(arg_code))
+            {
+                RegId regid = regAllocator.getRegId(result_code);
+                std::string reg8 = regAllocator.toReg8(regid);
+                asc += "\tmovb " + arg_code + ", " + reg8 + "\n";           //      movb {arg_code}, {reg8}
+                asc += "\tmovsbq " + reg8 + ", " + result_code + "\n";      //      movsbq {reg8}, {result_code}
+            }
+            else
+            {
+                asc += "\tmovq " + arg_code + ", " + result_code + "\n";    //      movq {arg_addr}, {result_addr}
+            }
         }
     }
-    // arg is a variable
+    // result is in memory
     else
     {
-        bool argOneByte = isOneByteType(arg);
-        if (argOneByte)
+        // arg is a number
+        if (isNumber(arg))
         {
-            asc += "\tmovb " + getVarCode(arg) + ", %al\n";                     //      movb {arg}, %al
+            // out of int32 range
+            if (isOutOfInt32Range(std::stoll(arg)))
+            {
+                RegId regid = getTempReg();
+                std::string reg64 = regAllocator.toReg64(regid);
+                std::string reg8 = regAllocator.toReg8(regid);
+                asc += "\tmovabsq $" + arg + ", " + reg64 + "\n";               //      movabsq ${int64}, {reg64}
+                if (resultOneByte)
+                {
+                    asc += "\tmovb " + reg8 + ", " + result_code + "\n";        //      movb {reg8}, {result}
+                }
+                else
+                {
+                    asc += "\tmovq " + reg64 + ", " + result_code + "\n";       //      movq {reg64}, {result}
+                }
+            }
+            else if(resultOneByte)
+            {
+                RegId regid = getTempReg();
+                std::string reg64 = regAllocator.toReg64(regid);
+                std::string reg8 = regAllocator.toReg8(regid);
+                asc += "\tmovq $" + arg + ", " + reg64 + "\n";                  //      movq ${int32}, {reg64}
+                asc += "\tmovb " + reg8 + ", " + result_code + "\n";            //      movb {reg8}, {result}
+            }
+            else
+            {
+                asc += "\tmovq $" + arg + ", " + result_code + "\n";            //      movq ${int32}, {result}
+            }
         }
+        // arg is a variable
         else
         {
-            asc += "\tmovq " + getVarCode(arg) + ", %rax\n";                    //      movq {arg}, %rax
-        }
-        if (resultOneByte)
-        {
-            asc += "\tmovb %al, " + getVarCode(result, true) + "\n";            //      movb %al, {result}
-        }
-        else if (argOneByte)
-        {
-            asc += "\tmovsbq %al, %rax\n";                                      //      movsbq %al, %rax
-            asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";           //      movq %rax, {result}
-        }
-        else
-        {
-            asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";           //      movq %rax, {result}
+            std::string reg8;
+            std::string reg64;
+            if (isRegister(arg_code))
+            {
+                RegId regid = regAllocator.getRegId(arg_code);
+                reg64 = regAllocator.toReg64(regid);
+                reg8 = regAllocator.toReg8(regid);
+            }
+            else
+            {
+                RegId regid = getTempReg();
+                reg64 = regAllocator.toReg64(regid);
+                reg8 = regAllocator.toReg8(regid);
+                if (argOneByte)
+                {
+                    asc += "\tmovb " + arg_code + ", " + reg8 + "\n";           //      movb {arg}, {reg8}
+                    asc += "\tmovsbq " + reg8 + ", " + reg64 + "\n";            //      movsbq {reg8}, {reg64}
+                }
+                else
+                {
+                    asc += "\tmovq " + arg_code + ", " + reg64 + "\n";          //      movq {arg}, {reg64}
+                }
+            }
+            if (resultOneByte)
+            {
+                asc += "\tmovb " + reg8 + ", " + result_code + "\n";            //      movb {reg8}, {result}
+            }
+            else
+            {
+                asc += "\tmovq " + reg64 + ", " + result_code + "\n";           //      movq {reg64}, {result}
+            }
         }
     }
+
+    freeTempRegs();
 }
 
 void ASGenerator::call_func(const std::string &params_count, const std::string &return_type, const std::string &func_name)
 {
+    std::stack<std::string> regStack;
+    for (auto reg : m_currentVarRegs)
+    {
+        std::string regStr = regAllocator.toReg64(reg);
+        regStack.push(regStr);
+        std::string code = "\tpushq " + regStr + "\n";  //  pushq {reg}
+        // no param
+        if (save_reg_pos < 0)
+        {
+            asc += code;
+        }
+        else
+        {
+            asc.insert(save_reg_pos, code);
+        }
+    }
+    
     asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
     asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
+
     ret_type = return_type;
+    save_reg_pos = -1;
+    call_func_end_pos = asc.length();
+
+    while(!regStack.empty())
+    {
+        std::string regStr = regStack.top();
+        asc += "\tpopq " + regStr + "\n";  //  popq {reg}
+        regStack.pop();
+    }
 }
 
 void ASGenerator::logic_not(const std::string &arg, const std::string &result)
@@ -367,32 +492,69 @@ void ASGenerator::logic_not(const std::string &arg, const std::string &result)
     // undefined temp
     if (result.substr(0, 2) == "t^")
     {
-        dec_local_var(result, "1", "var_char");
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", "var_int");
+        }
+        else
+        {
+            setRegister(result, regid, "var_int");
+        }
     }
 
     std::string result_code = getVarCode(result, true);
     std::string arg_code = getVarCode(arg);
+    std::string arg_64 = arg_code;
+    std::string arg_8 = arg_code;
+
+    if (isRegister(arg_code))
+    {
+        RegId regid = regAllocator.getRegId(arg_code);
+        arg_64 = regAllocator.toReg64(regid);
+        arg_8 = regAllocator.toReg8(regid);
+    }
     
-    if (isOneByteType(arg))
+    if (isRegister(result_code))
     {
-        asc += "\tmovb " + arg_code + ", %al\n";        //  movb {arg}, %al
-        asc += "\ttestb %al, %al\n";                    //  testb %al, %al
-        asc += "\tsetz %al\n";                          //  setz %al
+        RegId regid = regAllocator.getRegId(result_code);
+        std::string reg64 = regAllocator.toReg64(regid);
+        std::string reg8 = regAllocator.toReg8(regid);
+        if (isOneByteType(arg))
+        {
+            asc += "\tmovb " + arg_8 + ", " + reg8 + "\n";          //  movb {arg}, {reg8}
+            asc += "\ttestb " + reg8 + ", " + reg8 + "\n";          //  testb {reg8}, {reg8}
+        }
+        else
+        {
+            asc += "\tmovq " + arg_64 + ", " + reg64 + "\n";        //  movq {arg}, {reg64}
+            asc += "\ttestq " + reg64 + ", " + reg64 + "\n";        //  testq {reg64}, {reg64}
+        }
+        asc += "\tsetz " + reg8 + "\n";                             //  setz {reg8}
+        asc += "\tmovzbq " + reg8 + ", " + reg64 + "\n";            //  movzbq {reg8}, {reg64}
     }
+    // result_code is in memory
     else
     {
-        asc += "\tmovq " + arg_code + ", %rax\n";       //  movq {arg}, %rax
-        asc += "\ttestq %rax, %rax\n";                  //  testq %rax, %rax
-        asc += "\tsetz %al\n";                          //  setz %al
-    }
-    if (isOneByteType(result))
-    {
-        asc += "\tmovb %al, " + result_code + "\n";     //  movb %al, {result}
-    }
-    else
-    {
-        asc += "\tmovzbq %al, %rax\n";                  //  movzbq %al, %rax
-        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
+        RegId regid = getTempReg();
+        std::string reg64 = regAllocator.toReg64(regid);
+        std::string reg8 = regAllocator.toReg8(regid);
+        if (isOneByteType(arg))
+        {
+            asc += "\tmovb " + arg_8 + ", " + reg8 + "\n";              //  movb {arg}, {reg8}
+            asc += "\ttestb " + reg8 + ", " + reg8 + "\n";              //  testb {reg8}, {reg8}
+            asc += "\tsetz " + reg8 + "\n";                             //  setz {reg8}
+        }
+        else
+        {
+            asc += "\tmovq " + arg_64 + ", " + reg64 + "\n";            //  movq {arg}, {reg64}
+            asc += "\ttestq " + reg64 + ", " + reg64 + "\n";            //  testq {reg64}, {reg64}
+            asc += "\tsetz " + reg8 + "\n";                             //  setz {reg8}
+        }
+        asc += "\tmovzbq " + reg8 + ", " + reg64 + "\n";            //  movzbq {reg8}, {reg64}
+        asc += "\tmovq " + reg64 + ", " + result_code + "\n";       //  movq {reg64}, {result}
+        
+        freeTempRegs();
     }
 }
 
@@ -401,46 +563,164 @@ void ASGenerator::negate(const std::string &arg, const std::string &result)
     // undefined temp
     if (result.substr(0, 2) == "t^")
     {
-        dec_local_var(result, "8", "var_int");
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", "var_int");
+        }
+        else
+        {
+            setRegister(result, regid, "var_int");
+        }
     }
 
     std::string result_code = getVarCode(result, true);
     std::string arg_code = getVarCode(arg);
+    std::string arg_64 = arg_code;
+    std::string arg_8 = arg_code;
+
+    if (isRegister(arg_code))
+    {
+        RegId regid = regAllocator.getRegId(arg_code);
+        arg_64 = regAllocator.toReg64(regid);
+        arg_8 = regAllocator.toReg8(regid);
+    }
 
     bool isArgOneByte = isOneByteType(arg);
-    bool isResultOneByte = isOneByteType(result);
     
-    if (isArgOneByte)
+    if (isRegister(result_code))
     {
-        asc += "\tmovb " + arg_code + ", %al\n";        //  movb {arg}, %al
-        asc += "\tnegb %al\n";                          //  negb %al
+        RegId regid = regAllocator.getRegId(result_code);
+        std::string reg64 = regAllocator.toReg64(regid);
+        std::string reg8 = regAllocator.toReg8(regid);
+        if (isArgOneByte)
+        {
+            asc += "\tmovb " + arg_8 + ", " + reg8 + "\n";      //  movb {arg}, {reg8}
+            asc += "\tnegb " + reg8 + "\n";                     //  negb {reg8}
+            asc += "\tmovsbq " + reg8 + ", " + reg64 + "\n";    //  movsbq {reg8}, {reg64}
+        }
+        else
+        {
+            asc += "\tmovq " + arg_64 + ", " + reg64 + "\n";    //  movq {arg}, {reg64}
+            asc += "\tnegq " + reg64 + "\n";                    //  negq {reg64}
+        }
+    }
+    // result is in memory
+    else
+    {
+        RegId regid = getTempReg();
+        std::string reg64 = regAllocator.toReg64(regid);
+        std::string reg8 = regAllocator.toReg8(regid);
+        if (isArgOneByte)
+        {
+            asc += "\tmovb " + arg_8 + ", " + reg8 + "\n";          //  movb {arg}, {reg8}
+            asc += "\tnegb " + reg8 + "\n";                         //  negb {reg8}
+            asc += "\tmovsbq " + reg8 + ", " + reg64 + "\n";        //  movsbq {reg8}, {reg64}
+            asc += "\tmovq " + reg64 + ", " + result_code + "\n";   //  movq {reg64}, {result}
+        }
+        else
+        {
+            asc += "\tmovq " + arg_64 + ", " + reg64 + "n";         //  movq {arg}, {reg64}
+            asc += "\tnegq " + reg64 + "\n";                        //  negq {reg64}
+            asc += "\tmovq " + reg64 + ", " + result_code + "\n";   //  movq {reg64}, {result}
+        }
+        
+        freeTempRegs();
+    }
+}
+
+void ASGenerator::address(const std::string &arg, const std::string &result)
+{
+    // undefined temp
+    if (result.substr(0, 2) == "t^")
+    {
+        std::string argType = getSymbolType(arg);
+        std::string type = "ptr" + argType.substr(argType.find('_'));
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", type);
+        }
+        else
+        {
+            setRegister(result, regid, type);
+        }
+    }
+
+    std::string arg_code = getVarCode(arg);
+    std::string result_code = getVarCode(result);
+
+    if (isRegister(result_code))
+    {
+        asc += "\tleaq " + arg_code + ", " + result_code + "\n";    // leaq {arg_addr}, {result_reg}
     }
     else
     {
-        asc += "\tmovq " + arg_code + ", %rax\n";       //  movq {arg}, %rax
-        asc += "\tnegq %rax\n";                         //  negq %rax
+        RegId regid = getTempReg();
+        std::string regStr = regAllocator.toReg64(regid);
+        asc += "\tleaq " + arg_code + ", " + regStr + "\n";         // leaq {arg_addr}, {temp_reg}
+        asc += "\tmovq " + regStr + ", " + result_code + "\n";      // movq {temp_reg}, {result_addr}
+        freeTempRegs();
     }
-    if (isResultOneByte)
+}
+
+void ASGenerator::reference(const std::string &arg, const std::string &result)
+{
+    // undefined temp
+    if (result.substr(0, 2) == "t^")
     {
-        asc += "\tmovb %al, " + result_code + "\n";     //  movb %al, {result}
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", "var_int");
+        }
+        else
+        {
+            setRegister(result, regid, "var_int");
+        }
     }
-    else if (isArgOneByte)
+
+    std::string arg_code = getVarCode(arg);
+    std::string result_code = getVarCode(result);
+    std::string mov = "movq";
+
+    bool refOneByte = isOneByteType('*' + arg);
+    if (refOneByte)
     {
-        asc += "\tmovsbq %al, %rax\n";                  //  movsbq %al, %rax
-        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
+        mov = "movzbq";
+    }
+
+    if (isRegister(arg_code))
+    {
+        arg_code = '(' + arg_code + ')';
+        m_ignoreRegs.insert(regAllocator.getRegId(arg_code));
     }
     else
     {
-        asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
+        RegId regid;
+        regid = getTempReg();
+        std::string regStr = regAllocator.toReg64(regid);
+        asc += "\tmovq " + arg_code + ", " + regStr + "\n";                 // movq {arg_addr}, {regStr}
+        arg_code = '(' + regStr + ')';
     }
+
+    if (isRegister(result_code))
+    {
+        asc += "\t" + mov + " " + arg_code + ", " + result_code + "\n";     // {movq | movzbq} {arg_addr}, {result_reg}
+    }
+    else
+    {
+        RegId regid = getTempReg();
+        std::string regStr = regAllocator.toReg64(regid);
+        asc += "\t" + mov + " " + arg_code + ", " + regStr + "\n";          // {movq | movzbq} {arg_addr}, {regStr}
+        asc += "\tmovq " + regStr + ", " + result_code + "\n";              // movq {regStr}, {result_addr}
+    }
+    
+    freeTempRegs();
 }
 
 void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
 {
-    bool sign1 = false;
-    bool sign2 = false;
-    long long num1;
-    long long num2;
     // undefined temp
     if (result.substr(0, 2) == "t^")
     {
@@ -448,21 +728,36 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         std::string arg2Type = getSymbolType(arg2);
         std::string arg1Prefix = arg1Type.substr(0, arg1Type.find('_'));
         std::string arg2Prefix = arg2Type.substr(0, arg2Type.find('_'));
+        RegId regid = regAllocator.getVarReg(result);
+        std::string type;
         // arg1 is pointer
         if (arg1Prefix == "ptr")
         {
-            dec_local_var(result, "8", arg1Type);
+            type = arg1Type;
         }
         // arg2 is pointer
         else if (arg2Prefix == "ptr")
         {
-            dec_local_var(result, "8", arg2Type);
+            type = arg2Type;
         }
         else
         {
-            dec_local_var(result, "8", "var_int");
+            type = "var_int";
+        }
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", type);
+        }
+        else
+        {
+            setRegister(result, regid, type);
         }
     }
+
+    bool sign1 = false;
+    bool sign2 = false;
+    long long num1;
+    long long num2;
     // arg1 is a number
     if (isNumber(arg1))
     {
@@ -476,10 +771,9 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         sign2 = true;
     }
     // At least one of arg1 and arg2 is not number
-    std::string code1, code2, result_code;
+    std::string code1, code2, result_code = getVarCode(result);
     std::string mov1 = "movq", mov2 = "movq";
 
-    bool resultOneByte = isOneByteType(result);
     bool arg1OneByte = isOneByteType(arg1);
     bool arg2OneByte = isOneByteType(arg2);
 
@@ -497,6 +791,11 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         if (arg1OneByte)
         {
             mov1 = "movsbq";
+            if (isRegister(code1))
+            {
+                RegId regid = regAllocator.getRegId(code1);
+                code1 = regAllocator.toReg8(regid);
+            }
         }
     }
 
@@ -514,6 +813,11 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         if (arg2OneByte)
         {
             mov2 = "movsbq";
+            if (isRegister(code2))
+            {
+                RegId regid = regAllocator.getRegId(code2);
+                code2 = regAllocator.toReg8(regid);
+            }
         }
     }
 
@@ -534,72 +838,119 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // idivq
     if (op == "/" || op == "%")
     {
-        asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq | movsbq} {arg1}, %rax
-        asc += "\tcqto\n";                                              //      cqto
-        asc += "\t" + mov2 + " " + code2 + ", %rcx\n";                  //      {movq | movabsq | movsbq} {arg2}, %rcx
-        asc += "\tidivq %rcx\n";                                        //      idivq %rcx
-        result_code = getVarCode(result, true);
+        if (code2 == "%rax" || code2 == "%rdx")
+        {
+            RegId regid = getTempReg();
+            std::string reg64 = regAllocator.toReg64(regid);
+            asc += "\tmovq " + code2 + ", " + reg64 + "\n"; //  movq {%rax | %rdx}, {reg64}
+            code2 = reg64;
+        }
+        asc += "\tpushq %rax\n";                            //  pushq %rax
+        asc += "\tpushq %rdx\n";                            //  pushq %rdx
+        asc += "\tpushq %rcx\n";                            //  pushq %rcx
+        asc += "\t" + mov1 + " " + code1 + ", %rax\n";      //  {movq | movabsq | movsbq} {arg1}, %rax
+        asc += "\tcqto\n";                                  //  cqto
+        asc += "\t" + mov2 + " " + code2 + ", %rcx\n";      //  {movq | movabsq | movsbq} {arg2}, %rcx
+        asc += "\tidivq %rcx\n";                            //  idivq %rcx
         // quotient
         if(op == "/")
         {
-            if (resultOneByte)
-            {
-                asc += "\tmovb %al, " + result_code + "\n";             //      movb %al, {result}
-            }
-            else
-            {
-                asc += "\tmovq %rax, " + result_code + "\n";            //      movq %rax, {result}
-            }
+            asc += "\tmovq %rax, " + result_code + "\n";    //  movq %rax, {result}
         }
         // remainder
         else
         {
-            if (resultOneByte)
+            asc += "\tmovq %rdx, " + result_code + "\n";    //  movq %rdx, {result}
+        }
+        // popq
+        for (int i = 0; i < 3; i ++)
+        {
+            std::string reg;
+            if (i == 0)
             {
-                asc += "\tmovb %dl, " + result_code + "\n";             //      movb %dl, {result}
+                reg = "%rcx";
+            }
+            else if (i == 1)
+            {
+                reg = "%rdx";
             }
             else
             {
-                asc += "\tmovq %rdx, " + result_code + "\n";            //      movq %rdx, {result}
+                reg = "%rax";
+            }
+            if (result_code == reg)
+            {
+                asc += "\taddq $8, %rsp\n";                 //  addq $8, %rsp
+            }
+            else
+            {
+                asc += "\tpopq " + reg + "\n";              //  popq {reg}
             }
         }
     }
     // addq, subq, imulq
     else
     {
-        asc += "\t" + mov1 + " " + code1 + ", %rax\n";                  //      {movq | movabsq | movsbq} {arg1}, %rax
-        if (arg2OneByte)
+        if (isRegister(result_code))
         {
-            asc += "\tmovsbq " + code2 + ", %rcx\n";                    //      {movsbq} {arg2}, %rcx
-            asc += "\t" + as_op + " %rcx, %rax\n";                      //      {as_op} %rcx, %rax
+            asc += "\t" + mov1 + " " + code1 + ", " + result_code + "\n";                  //      {movq | movabsq | movsbq} {arg1}, {result}
+            if (mov2 == "movsbq" || mov2 == "movabsq")
+            {
+                m_ignoreRegs.insert(regAllocator.getRegId(result_code));
+                RegId regid = getTempReg();
+                std::string reg2 = regAllocator.toReg64(regid);
+                asc += "\t" + mov2 + " " + code2 + ", " + reg2 + "\n";                     //      {movsbq | movabsq} {arg2}, {reg2}
+                asc += "\t" + as_op + " " + reg2 + ", " + result_code + "\n";              //      {as_op} {reg2}, {result}
+            }
+            else
+            {
+                asc += "\t" + as_op + " " + code2 + ", " + result_code + "\n";              //      {as_op} {arg2}, {result}
+            }
         }
+        // result_code is in memory
         else
         {
-            asc += "\t" + as_op + " " + code2 + ", %rax\n";             //      {as_op} {arg2}, %rax
+            RegId regid = getTempReg();
+            std::string reg1 = regAllocator.toReg64(regid);
+            asc += "\t" + mov1 + " " + code1 + ", " + reg1 + "\n";                      //      {movq | movabsq | movsbq} {arg1}, {reg1}
+            if (mov2 == "movsbq" || mov2 == "movabsq")
+            {
+                RegId regid = getTempReg();
+                std::string reg2 = regAllocator.toReg64(regid);
+                asc += "\t" + mov2 + " " + code2 + ", " + reg2 + "\n";                  //      {movsbq | movabsq} {arg2}, {reg2}
+                asc += "\t" + as_op + " " + reg2 + ", " + reg1 + "\n";                  //      {as_op} {reg2}, {reg1}
+            }
+            else
+            {
+                asc += "\t" + as_op + " " + code2 + ", " + reg1 + "\n";                 //      {as_op} {arg2}, {reg1}
+            }
+            asc += "\tmovq " + reg1 + ", " + result_code + "\n";                        //      movq {reg1}, {result}
         }
-        result_code = getVarCode(result, true);
-        if (resultOneByte)
-        {
-            asc += "\tmovb %al, " + result_code + "\n";                 //      movb %al, {result}
-        }
-        else
-        {
-            asc += "\tmovq %rax, " + result_code + "\n";                //      movq %rax, {result}
-        }
+        
     }
+    freeTempRegs();
 }
 
 void ASGenerator::relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
 {
+    // undefined temp
+    if (result.substr(0, 2) == "t^")
+    {
+        RegId regid = regAllocator.getVarReg(result);
+        if (regid == RegId::Nul)
+        {
+            dec_local_var(result, "8", "var_int");
+        }
+        else
+        {
+            setRegister(result, regid, "var_int");
+        }
+    }
+
     bool sign1 = false;
     bool sign2 = false;
     long long num1;
     long long num2;
-    // undefined temp
-    if (result.substr(0, 2) == "t^")
-    {
-        dec_local_var(result, "8", "var_int");
-    }
     // arg1 is a number
     if (isNumber(arg1))
     {
@@ -613,10 +964,9 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
         sign2 = true;
     }
     // At least one of arg1 and arg2 is not number
-    std::string code1, code2, result_code;
+    std::string code1, code2;
     std::string mov1 = "movq", mov2 = "movq";
 
-    bool resultOneByte = isOneByteType(result);
     bool arg1OneByte = isOneByteType(arg1);
     bool arg2OneByte = isOneByteType(arg2);
 
@@ -634,6 +984,11 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
         if (arg1OneByte)
         {
             mov1 = "movsbq";
+            if (isRegister(code1))
+            {
+                RegId regid = regAllocator.getRegId(code1);
+                code1 = regAllocator.toReg8(regid);
+            }
         }
     }
     if (sign2)
@@ -650,6 +1005,11 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
         if (arg2OneByte)
         {
             mov2 = "movsbq";
+            if (isRegister(code2))
+            {
+                RegId regid = regAllocator.getRegId(code2);
+                code2 = regAllocator.toReg8(regid);
+            }
         }
     }
     std::string as_op;
@@ -677,20 +1037,48 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     {
         as_op = "setl";
     }
+
+    std::string result_code = getVarCode(result, true);
     
-    asc += "\t" + mov1 + " " + code1 + ", %rax\n";              //      {movq | movabsq | movsbq} {arg1}, %rax
-    asc += "\t" + mov2 + " " + code2 + ", %rbx\n";              //      {movq | movabsq | movsbq} {arg2}, %rbx
-    asc += "\tcmp %rbx, %rax\n";                                //      cmp %rbx, %rax
-    asc += "\t" + as_op + " %cl\n";                             //      {as_op} %cl
-    asc += "\tmovzbq %cl, %rax\n";                              //      movzbq %cl, %rax
-    if (resultOneByte)
+    if (isRegister(result_code))
     {
-        asc += "\tmovb %al, " + getVarCode(result, true) + "\n";   //      movb %al, {result}
+        RegId regid = regAllocator.getRegId(result_code);
+        std::string result_64 = regAllocator.toReg64(regid);
+        std::string result_8 = regAllocator.toReg8(regid);
+        asc += "\t" + mov1 + " " + code1 + ", " + result_64 + "\n";     //      {movq | movabsq | movsbq} {arg1}, {result_64}
+        if (mov2 == "movsbq" || mov2 == "movabsq")
+        {
+            m_ignoreRegs.insert(regAllocator.getRegId(result_code));
+            RegId regid = getTempReg();
+            std::string reg64 = regAllocator.toReg64(regid);
+            asc += "\t" + mov2 + " " + code2 + ", " + reg64 + "\n";     //      {movsbq | movabsq} {arg2}, {reg64}
+            code2 = reg64;
+        }
+        asc += "\tcmpq " + code2 + ", " + result_64 + "\n";             //      cmpq {arg2}, {result_64}
+        asc += "\t" + as_op + " " + result_8 + "\n";                    //      {as_op} {result_8}
+        asc += "\tmovzbq " + result_8 + ", " + result_64 + "\n";        //      movzbq {result_8}, {result_64}
     }
+    // result is in memory
     else
     {
-        asc += "\tmovq %rax, " + getVarCode(result, true) + "\n";  //      movq %rax, {result}
+        RegId regid = getTempReg();
+        std::string reg1_64 = regAllocator.toReg64(regid);
+        std::string reg1_8 = regAllocator.toReg8(regid);
+        asc += "\t" + mov1 + " " + code1 + ", " + reg1_64 + "\n";       //      {movq | movabsq | movsbq} {arg1}, {reg1_64}
+        if (mov2 == "movsbq" || mov2 == "movabsq")
+        {
+            RegId regid = getTempReg();
+            std::string reg64 = regAllocator.toReg64(regid);
+            asc += "\t" + mov2 + " " + code2 + ", " + reg64 + "\n";     //      {movsbq | movabsq} {arg2}, {reg64}
+            code2 = reg64;
+        }
+        asc += "\tcmpq " + code2 + ", " + reg1_64 + "\n";               //      cmpq {arg2}, {reg1_64}
+        asc += "\t" + as_op + " " + reg1_8 + "\n";                      //      {as_op} {reg1_8}
+        asc += "\tmovzbq " + reg1_8 + ", " + reg1_64 + "\n";            //      movzbq {reg1_8}, {reg1_64}
+        asc += "\tmovq " + reg1_64 + ", " + result_code + "\n";         //      movq {reg1_64}, {result}
     }
+
+    freeTempRegs();
 }
 
 void ASGenerator::dec_start()
@@ -713,6 +1101,11 @@ bool ASGenerator::isOutOfInt32Range(int64_t number) const
 bool ASGenerator::isNumber(const std::string &str) const
 {
     return str[0] == '-' || std::isdigit(str[0]);
+}
+
+bool ASGenerator::isRegister(const std::string &str) const
+{
+    return str[0] == '%';
 }
 
 bool ASGenerator::isOneByteType(const std::string &str) const
@@ -761,4 +1154,59 @@ std::string ASGenerator::getSymbolType(const std::string &str) const
         return "var" + data_type;
     }
     return symTable.find(str)->second.type;
+}
+
+void ASGenerator::setRegister(const std::string &var_name, RegId regid, const std::string &type)
+{
+    std::string regStr = regAllocator.toReg64(regid);
+    symTable.insert(std::pair<std::string, VarSymbol>(var_name, VarSymbol(regStr, type)));    // {var_name} : {reg}
+    localVar_set.insert(var_name);
+    m_currentVarRegs.insert(regid);
+}
+
+ASGenerator::RegId ASGenerator::getTempReg()
+{
+    RegId reg = regAllocator.getOneReg();
+    if (reg != RegId::Nul)
+    {
+        m_tempRegs[reg] = false;
+        return reg;
+    }
+    for (int i = 0; i < RegAllocator::reg_count; i ++)
+    {
+        RegId reg = RegId(i);
+        if (m_tempRegs.find(reg) == m_tempRegs.end() && m_ignoreRegs.find(reg) == m_ignoreRegs.end())
+        {
+            std::string regStr = regAllocator.toReg64(reg);
+            asc += "\tpushq " + regStr + "\n";          // pushq {regStr}
+            m_tempRegs[reg] = true;
+            return reg;
+        }
+    }
+    return RegId::Nul;
+}
+
+void ASGenerator::freeTempRegs(RegId ignore)
+{
+    for (auto [regid, memory] : m_tempRegs)
+    {
+        if (memory)
+        {
+            if (regid != ignore)
+            {
+                std::string regStr = regAllocator.toReg64(regid);
+                asc += "\tpopq " + regStr + "\n";       // popq {regStr}
+            }
+            else
+            {
+                asc += "\tsubq $8, %rsp\n";             // subq $8, %rsp
+            }
+        }
+        else
+        {
+            regAllocator.freeReg(regid);
+        }
+    }
+    m_tempRegs.clear();
+    m_ignoreRegs.clear();
 }

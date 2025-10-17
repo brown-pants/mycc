@@ -29,6 +29,8 @@ public:
         Op_call_func,   // arg1 = paramsCount, arg2 = returnType, result = funcName
         Op_not,         // result = !arg1
         Op_neg,         // result = -arg1
+        Op_address,     // result = &arg1
+        Op_ref,         // result = *arg1
         Op_add,         // result = arg1 + arg2
         Op_sub,         // result = arg1 - arg2
         Op_mult,        // result = arg1 * arg2
@@ -72,10 +74,12 @@ private:
     std::unordered_map<std::string, std::string> strNames;
     std::unordered_set<std::string> definedFunctions;
     std::vector<Quaternion> code;
+    std::unordered_map<std::string, std::string> tempValues;
 
     std::string new_temp();
     std::string new_label();
     std::string new_string();
+    void handle_star(std::string &var);
     std::string getStrName(const std::string &str);
     Symbol *getSymbol(const std::string &symbol_name);
 

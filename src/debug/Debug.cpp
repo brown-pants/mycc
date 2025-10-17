@@ -160,9 +160,10 @@ void Debug::PrintTokens(const std::vector<Token> &tokens)
 void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
 {
     std::cout << green << "TAC:" << white << std::endl;
-    for (const auto &code : tac)
+    for (int idx = 0; idx < tac.size(); idx ++)
     {
-        std::cout << std::endl;
+        const TACGenerator::Quaternion &code = tac[idx];
+        std::cout << std::endl << idx << ": ";
         switch(code.op)
         {
             case TACGenerator::Op_global_init:
@@ -213,6 +214,12 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             case TACGenerator::Op_neg:
             std::cout << code.result << " = - " << code.arg1 << std::endl;
             break;
+            case TACGenerator::Op_address:
+            std::cout << code.result << " = & " << code.arg1 << std::endl;
+            break;
+            case TACGenerator::Op_ref:
+            std::cout << code.result << " = * " << code.arg1 << std::endl;
+            break;
             case TACGenerator::Op_add:
             std::cout << code.result << " = " << code.arg1 << " + " << code.arg2 << std::endl;
             break;
@@ -247,5 +254,20 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
             std::cout << code.result << " = " << code.arg1 << " <= " << code.arg2 << std::endl;
             break;
         }
+    }
+}
+
+void Debug::PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAllocator::Interval, RegAllocator::VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs)
+{
+    std::cout << std::endl << green <<"Active Intervals & Register Allocation:" << std::endl << std::endl << white;
+    for (auto iter : intervals)
+    {
+        std::string reg = "~";
+        auto it = regs.find(iter.first);
+        if (it != regs.end())
+        {
+            reg = std::to_string(it->second);
+        }
+        std::cout << iter.first << ": " << iter.second.begin << " ~ " << iter.second.end << "\t\treg: " << reg << std::endl;
     }
 }

@@ -1,7 +1,8 @@
 #ifndef __ASGENERATOR_H__
 #define __ASGENERATOR_H__
 
-#include "../3ac/TACGenerator.h"
+#include "RegAllocator.h"
+#include <set>
 #include <unordered_set>
 
 class ASGenerator
@@ -11,6 +12,9 @@ public:
     std::string exec();
 
 private:
+    using RegId = RegAllocator::RegId;
+    RegAllocator regAllocator;
+
     struct VarSymbol
     {
         VarSymbol() {}
@@ -47,6 +51,8 @@ private:
     void call_func(const std::string &params_count, const std::string &return_type, const std::string &func_name);
     void logic_not(const std::string &arg, const std::string &result);
     void negate(const std::string &arg, const std::string &result);
+    void address(const std::string &arg, const std::string &result);
+    void reference(const std::string &arg, const std::string &result);
     void arithmetic(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
     void relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result);
 
@@ -54,8 +60,19 @@ private:
 
     bool isOutOfInt32Range(int64_t number) const;
     bool isNumber(const std::string &str) const;
+    bool isRegister(const std::string &str) const;
     bool isOneByteType(const std::string &str) const;
     std::string getSymbolType(const std::string &str) const;
+    void setRegister(const std::string &var_name, RegId regid, const std::string &type);
+
+    std::map<RegId, bool> m_tempRegs;
+    std::set<RegId> m_ignoreRegs;
+    RegId getTempReg();
+    void freeTempRegs(RegId ignore = RegId::Nul);
+
+    std::set<RegId> m_currentVarRegs;
+    int save_reg_pos;
+    int call_func_end_pos;
 };
 
 #endif

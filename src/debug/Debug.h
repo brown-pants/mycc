@@ -3,6 +3,7 @@
 
 #include "../token/Token.h"
 #include "../codegen/3ac/TACGenerator.h"
+#include "../codegen/as/RegAllocator.h"
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +34,7 @@ public:
 
     static void PrintTokens(const std::vector<Token> &tokens);
     static void PrintTAC(const std::vector<TACGenerator::Quaternion> &tac);
+    static void PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAllocator::Interval, RegAllocator::VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs);
 
 private:
     Debug();
