@@ -4,24 +4,24 @@
 #include <iostream>
 
 Lexer::Lexer(const std::string &source) 
-    : source(source), pos(-1), line(1), m_hasError(false)
+    : source(source), file(""), pos(-1), line(1), m_hasError(false)
     , m_keywords
     ({
-        { "if", Token(Token::If, "if", 0) },
-        { "for", Token(Token::For, "for", 0) },
-        { "else", Token(Token::Else, "else", 0) },
-        { "while", Token(Token::While, "while", 0) },
-        { "break", Token(Token::Break, "break", 0) },
-        { "return", Token(Token::Return, "return", 0) },
-        { "extern", Token(Token::Extern, "extern", 0) },
-        { "continue", Token(Token::Continue, "continue", 0) },
-        { "int", Token(Token::DT_int, "int", 0) },
-        { "char", Token(Token::DT_char, "char", 0) },
-        { "float", Token(Token::DT_float, "float", 0) },
-        { "void", Token(Token::Void, "void", 0) }
+        { "if", Token(Token::If, "if", file, 0) },
+        { "for", Token(Token::For, "for", file, 0) },
+        { "else", Token(Token::Else, "else", file, 0) },
+        { "while", Token(Token::While, "while", file, 0) },
+        { "break", Token(Token::Break, "break", file, 0) },
+        { "return", Token(Token::Return, "return", file, 0) },
+        { "extern", Token(Token::Extern, "extern", file, 0) },
+        { "continue", Token(Token::Continue, "continue", file, 0) },
+        { "int", Token(Token::DT_int, "int", file, 0) },
+        { "char", Token(Token::DT_char, "char", file, 0) },
+        { "float", Token(Token::DT_float, "float", file, 0) },
+        { "void", Token(Token::Void, "void", file, 0) }
     })
     {
-
+        this->source += '\0';
     }
 
 std::vector<Token> Lexer::exec()
@@ -33,78 +33,82 @@ std::vector<Token> Lexer::exec()
     {
         switch (ch)
         {
+        //  #include
+        case '#':
+            handle_include();
+            break;
         //  ;
         case ';':
-            tokens.push_back(Token(Token::Semicolon, ";", line));
+            tokens.push_back(Token(Token::Semicolon, ";", file, line));
         break;
         //  ,
         case ',':
-            tokens.push_back(Token(Token::Comma, ",", line));
+            tokens.push_back(Token(Token::Comma, ",", file, line));
         break;
         //  +
         case '+': 
-            tokens.push_back(Token(Token::Plus, "+", line));
+            tokens.push_back(Token(Token::Plus, "+", file, line));
         break;
 
         //  -
         case '-': 
-            tokens.push_back(Token(Token::Minus, "-", line));
+            tokens.push_back(Token(Token::Minus, "-", file, line));
         break;
 
         //  *
         case '*': 
-            tokens.push_back(Token(Token::Mult, "*", line));
+            tokens.push_back(Token(Token::Mult, "*", file, line));
         break;
 
         //  /
         case '/': 
-            tokens.push_back(Token(Token::Div, "/", line));
+            tokens.push_back(Token(Token::Div, "/", file, line));
         break;
 
         //  %
         case '%': 
-            tokens.push_back(Token(Token::Mod, "%", line));
+            tokens.push_back(Token(Token::Mod, "%", file, line));
         break;
 
         //  (
         case '(': 
-            tokens.push_back(Token(Token::OpenParen, "(", line));
+            tokens.push_back(Token(Token::OpenParen, "(", file, line));
         break;
 
         //  )
         case ')': 
-            tokens.push_back(Token(Token::CloseParen, ")", line));
+            tokens.push_back(Token(Token::CloseParen, ")", file, line));
         break;
 
         //  [
         case '[': 
-            tokens.push_back(Token(Token::OpenSquare, "[", line));
+            tokens.push_back(Token(Token::OpenSquare, "[", file, line));
         break;
 
         //  ]
         case ']': 
-            tokens.push_back(Token(Token::CloseSquare, "]", line));
+            tokens.push_back(Token(Token::CloseSquare, "]", file, line));
         break;
         //  {
         case '{': 
-            tokens.push_back(Token(Token::OpenBrance, "{", line));
+            tokens.push_back(Token(Token::OpenBrance, "{", file, line));
         break;
 
         //  }
         case '}': 
-            tokens.push_back(Token(Token::CloseBrance, "}", line));
+            tokens.push_back(Token(Token::CloseBrance, "}", file, line));
         break;
 
         //  =   ==
         case '=': 
             if (peek_next() == '=')
             {
-                tokens.push_back(Token(Token::Eq_Eq, "==", line));
+                tokens.push_back(Token(Token::Eq_Eq, "==", file, line));
                 pos ++;
             }
             else 
             {
-                tokens.push_back(Token(Token::Eq, "=", line));
+                tokens.push_back(Token(Token::Eq, "=", file, line));
             }
         break;
         
@@ -112,12 +116,12 @@ std::vector<Token> Lexer::exec()
         case '!': 
             if (peek_next() == '=')
             {
-                tokens.push_back(Token(Token::Not_Eq, "!=", line));
+                tokens.push_back(Token(Token::Not_Eq, "!=", file, line));
                 pos ++;
             }
             else 
             {
-                tokens.push_back(Token(Token::Not, "!", line));
+                tokens.push_back(Token(Token::Not, "!", file, line));
             }
         break;
 
@@ -125,12 +129,12 @@ std::vector<Token> Lexer::exec()
         case '>': 
             if (peek_next() == '=')
             {
-                tokens.push_back(Token(Token::Greater_Eq, ">=", line));
+                tokens.push_back(Token(Token::Greater_Eq, ">=", file, line));
                 pos ++;
             }
             else 
             {
-                tokens.push_back(Token(Token::Greater, ">", line));
+                tokens.push_back(Token(Token::Greater, ">", file, line));
             }
         break;
 
@@ -138,12 +142,12 @@ std::vector<Token> Lexer::exec()
         case '<': 
             if (peek_next() == '=')
             {
-                tokens.push_back(Token(Token::Less_Eq, "<=", line));
+                tokens.push_back(Token(Token::Less_Eq, "<=", file, line));
                 pos ++;
             }
             else 
             {
-                tokens.push_back(Token(Token::Less, "<", line));
+                tokens.push_back(Token(Token::Less, "<", file, line));
             }
         break;
 
@@ -151,12 +155,12 @@ std::vector<Token> Lexer::exec()
         case '&': 
             if (peek_next() == '&')
             {
-                tokens.push_back(Token(Token::And, "&&", line));
+                tokens.push_back(Token(Token::And, "&&", file, line));
                 pos ++;
             }
             else
             {
-                tokens.push_back(Token(Token::Ampersand, "&", line));
+                tokens.push_back(Token(Token::Ampersand, "&", file, line));
             }
         break;
 
@@ -164,12 +168,12 @@ std::vector<Token> Lexer::exec()
         case '|':
             if (peek_next() == '|')
             {
-                tokens.push_back(Token(Token::Or, "||", line));
+                tokens.push_back(Token(Token::Or, "||", file, line));
                 pos ++;
             }
             else
             {
-                Debug::LexicalError(Token(Token::Identifier, std::string() + ch, line));
+                Debug::LexicalError(Token(Token::Identifier, std::string() + ch, file, line));
                 m_hasError = true;
             }
         break;
@@ -201,12 +205,12 @@ std::vector<Token> Lexer::exec()
             pos --;
         break;
         default: 
-            Debug::LexicalError(Token(Token::Identifier, std::string() + ch, line));
+            Debug::LexicalError(Token(Token::Identifier, std::string() + ch, file, line));
             m_hasError = true;
         }
     }
     
-    tokens.push_back(Token(Token::Eof, "$", line));
+    tokens.push_back(Token(Token::Eof, "$", file, line));
 
     return tokens;
 }
@@ -218,12 +222,17 @@ bool Lexer::hasError() const
 
 char Lexer::next()
 {
-    return ++ pos >= source.length() ? '\0' : source[pos];
+    return source[++ pos];
 }
 
 char Lexer::peek_next() const
 {
-    return pos + 1 >= source.length() ? '\0' : source[pos + 1];
+    return source[pos + 1];
+}
+
+char Lexer::peek_pre() const
+{
+    return pos == 0 ? '\n' : source[pos - 1];
 }
 
 void Lexer::skip_white()
@@ -236,6 +245,35 @@ void Lexer::skip_white()
         }
         ch = next();
     } while (ch == ' ' || ch == '\t' || ch == '\n');
+}
+
+void Lexer::handle_include()
+{
+    if (peek_pre() != '\n')
+    {
+        Debug::LexicalError(Token(Token::Identifier, "#", file, line));
+        m_hasError = true;
+        return;
+    }
+    // # 1 "main.c"
+    std::string row;
+    std::string file_name;
+    next();
+    char ch = next();
+    while (ch != ' ')
+    {
+        row += ch;
+        ch = next();
+    }
+    next();
+    ch = next();
+    while (ch != '\"')
+    {
+        file_name += ch;
+        ch = next();
+    }
+    line = std::stoi(row);
+    file = file_name;
 }
 
 Token Lexer::getIdentifier()
@@ -258,7 +296,7 @@ Token Lexer::getIdentifier()
     }
     else
     {
-        token = Token(Token::Identifier, id, line);
+        token = Token(Token::Identifier, id, file, line);
     }
     return token;
 }
@@ -283,7 +321,7 @@ Token Lexer::getIntFloat()
         ch = next();
     } while (isalpha(ch) || isdigit(ch) || ch == '.');
     
-    Token token(dot ? Token::Float : Token::Integer, con, line);
+    Token token(dot ? Token::Float : Token::Integer, con, file, line);
 
     if (dot > 1 || hasAlpha || con[0] == '0' && con.length() > 1 && isdigit(con[1]))
     {
@@ -360,7 +398,7 @@ Token Lexer::getCharStr()
         ch_s += ch;
     }
 
-    Token token(mark == '\'' ? Token::Character : Token::String, ch_s, line);
+    Token token(mark == '\'' ? Token::Character : Token::String, ch_s, file, line);
 
     if (ch != mark || escape_error || (mark == '\'' ? ch_s.length() != 3 : ch_s.length() < 2))
     {

@@ -1,7 +1,6 @@
 #include "Debug.h"
 #include <iostream>
 
-std::string Debug::curFile;
 std::unordered_map<Token::Type, std::string> Debug::TokenTypeMap = 
 {
     { Token::Semicolon,     "';'" },
@@ -55,96 +54,101 @@ void Debug::NoInput()
     std::cout << "compilation terminated." << std::endl;
 }
 
+void Debug::InvalidPreprocessing(const std::string file_name, int line, const std::string &instru)
+{
+    std::cout << file_name << ":" << line << ": " << red << "error: " << white << "invalid preprocessing directive #" << instru << std::endl;
+}
+
+void Debug::IncludeExpects(const std::string file_name, int line)
+{
+    std::cout << file_name << ":" << line << ": " << red << "error: " << white << "#include expects \"FILENAME\"" << std::endl;
+}
+
 void Debug::LexicalError(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << "undefined token " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << "undefined token " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::ParseError(const Token &token1, Token::Type token2)
 {
     if (token2 != Token::Nul)
     {
-        std::cout << curFile << ":" << token1.line() << ": " << red << "error: " << token1.lexeme() << white << " is not a " << red << TokenTypeMap[token2] << white << std::endl;
+        std::cout << token1.file() << ":" << token1.line() << ": " << red << "error: " << token1.lexeme() << white << " is not a " << red << TokenTypeMap[token2] << white << std::endl;
     }
     else
     {
-        std::cout << curFile << ":" << token1.line() << ": " << red << "error: " << white << "missing token before " << red << token1.lexeme() << white << std::endl;;
+        std::cout << token1.file() << ":" << token1.line() << ": " << red << "error: " << white << "missing token before " << red << token1.lexeme() << white << std::endl;;
     }
 }
 
 void Debug::Redeclare(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << "redeclaration of " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << "redeclaration of " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::TypeError(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << "data type error " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << "data type error " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::VarUndefined(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << "undefined variable " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << "undefined variable " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::NotArray(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a array" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a array" << white << std::endl;
 }
 
 void Debug::NotFunction(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a function" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a function" << white << std::endl;
 }
 
 void Debug::NotNormalVar(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a normal variable" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a normal variable" << white << std::endl;
 }
 
 void Debug::ParamsError(const Token &token, const std::string &str)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "too " << str << " arguments to function " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "too " << str << " arguments to function " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::AssignToErrorType(const Token &token, const std::string &type)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "assignment to expression with " + type << " " << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "assignment to expression with " + type << " " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::NotSupportedPointerArray(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, pointer arrays are not currently supported "  << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, pointer arrays are not currently supported "  << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::DereferencingError(const Token &token, const std::string &type)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, " << type << " dereferencing is not currently supported "  << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "Sorry, " << type << " dereferencing is not currently supported "  << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::InvalidOperands(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "invalid operands to "  << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "invalid operands to "  << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::InitialNotConstant(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: "  << white << "initializer element is not constant "  << red << token.lexeme() << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "initializer element is not constant "  << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::NotWithinLoop(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << token.lexeme() << white << " statement not within a loop" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << token.lexeme() << white << " statement not within a loop" << white << std::endl;
 }
 
 void Debug::NotConstant(const Token &token)
 {
-    std::cout << curFile << ":" << token.line() << ": " << red << "error: " << white << " variable-sized object may not a constant " << red << token.lexeme() << white << std::endl;
-}
-
-void Debug::SetCurrentFile(const std::string &file)
-{
-    curFile = file;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << " variable-sized object may not a constant " << red << token.lexeme() << white << std::endl;
 }
 
 void Debug::PrintTokens(const std::vector<Token> &tokens)

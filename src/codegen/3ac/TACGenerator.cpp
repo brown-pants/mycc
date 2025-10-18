@@ -238,7 +238,7 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         {
             if (type.type() == Token::Void && isPointer)
             {
-                Token ptrType(type.type(), type.lexeme() + "*", type.line());
+                Token ptrType(type.type(), type.lexeme() + "*", type.file(), type.line());
                 Debug::TypeError(ptrType);
                 m_hasError = true;
             }

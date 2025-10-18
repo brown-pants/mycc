@@ -12,6 +12,9 @@ class Debug
 public:
     static void NoInput();
 
+    static void InvalidPreprocessing(const std::string file_name, int line, const std::string &instru);
+    static void IncludeExpects(const std::string file_name, int line);
+
     static void LexicalError(const Token &token);
     static void ParseError(const Token &token1, Token::Type token2 = Token::Nul);
     static void Redeclare(const Token &token);
@@ -30,15 +33,12 @@ public:
     static void NotWithinLoop(const Token &token);
     static void NotConstant(const Token &token);
 
-    static void SetCurrentFile(const std::string &file);
-
     static void PrintTokens(const std::vector<Token> &tokens);
     static void PrintTAC(const std::vector<TACGenerator::Quaternion> &tac);
     static void PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAllocator::Interval, RegAllocator::VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs);
 
 private:
     Debug();
-    static std::string curFile;
     static std::unordered_map<Token::Type, std::string> TokenTypeMap;
 };
 

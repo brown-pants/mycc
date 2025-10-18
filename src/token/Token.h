@@ -80,19 +80,22 @@ public:
         Nul         //  ε
     };
 
-    Token(Type type = Nul, const std::string &lexeme = "Nul", int line = -1);
+    Token(Type type = Nul, const std::string &lexeme = "Nul", const std::string &file = "", int line = -1);
 
     void setType(Type type);
     void setLexeme(const std::string &lexeme);
+    void setFile(const std::string &file);
     void setLine(int line);
 
     Type type() const;
     std::string lexeme() const;
+    std::string file() const;
     int line() const;
 
 private:
     Type m_type;
     std::string m_lexeme;
+    std::string m_file;
     int m_line;
 };
 

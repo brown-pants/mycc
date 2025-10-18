@@ -17,14 +17,17 @@ public:
 private:
     std::unordered_map<std::string, Token> m_keywords;
     std::string source;
+    std::string file;
     int pos;
     int line;
     bool m_hasError;
 
     char next();
     char peek_next() const;
+    char peek_pre() const;
     void skip_white();
-    
+    void handle_include();
+
     Token getIdentifier();
     Token getIntFloat();
     Token getCharStr();

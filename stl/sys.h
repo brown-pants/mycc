@@ -12,6 +12,6 @@ extern int getch();
 
 extern int rand();
 
-extern int srand();
+extern int srand(int seed);
 
 extern int time(int *seconds);

@@ -1,5 +1,6 @@
 #include "debug/Debug.h"
 #include "util/Util.h"
+#include "pret/Preprocessor.h"
 #include "lex/Lexer.h"
 #include "parse/Parser.h"
 #include "codegen/3ac/TACGenerator.h"
@@ -53,11 +54,21 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        Debug::SetCurrentFile(file_name);
+        const std::string &f_name = Util::FileNameReplaceExtension(file_name);
         
         SymbolTable::GetInstance().clear();
 
-        Lexer lexer(Util::ReadFile(file_name));
+        Preprocessor preprocessor(file_name);
+        std::string source = preprocessor.exec();
+
+        if (preprocessor.hasError())
+        {
+            return -1;
+        }
+
+        Util::WriteFile(f_name + ".i", source);
+
+        Lexer lexer(source);
         std::vector<Token> tokens = lexer.exec();
 
         if (lexer.hasError())
@@ -88,7 +99,6 @@ int main(int argc, char *argv[])
         ASGenerator asGenerator(tac);
         std::string asc = asGenerator.exec();
 
-        const std::string &f_name = Util::FileNameReplaceExtension(file_name);
         Util::WriteFile(f_name + ".s", asc);
 
         system(("as " + f_name + ".s -o " + f_name + ".o").c_str());
