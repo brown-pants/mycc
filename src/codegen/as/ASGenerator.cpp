@@ -840,6 +840,9 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     {
         if (code2 == "%rax" || code2 == "%rdx")
         {
+            m_ignoreRegs.insert(regAllocator.getRegId("%rax"));
+            m_ignoreRegs.insert(regAllocator.getRegId("%rdx"));
+            m_ignoreRegs.insert(regAllocator.getRegId(code1));
             RegId regid = getTempReg();
             std::string reg64 = regAllocator.toReg64(regid);
             asc += "\tmovq " + code2 + ", " + reg64 + "\n"; //  movq {%rax | %rdx}, {reg64}
@@ -910,6 +913,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         // result_code is in memory
         else
         {
+            m_ignoreRegs.insert(regAllocator.getRegId(code2));
             RegId regid = getTempReg();
             std::string reg1 = regAllocator.toReg64(regid);
             asc += "\t" + mov1 + " " + code1 + ", " + reg1 + "\n";                      //      {movq | movabsq | movsbq} {arg1}, {reg1}
@@ -928,7 +932,7 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
         }
         
     }
-    freeTempRegs();
+    freeTempRegs(regAllocator.getRegId(result_code));
 }
 
 void ASGenerator::relational(const std::string &op, const std::string &arg1, const std::string &arg2, const std::string &result)
@@ -1061,6 +1065,7 @@ void ASGenerator::relational(const std::string &op, const std::string &arg1, con
     // result is in memory
     else
     {
+        m_ignoreRegs.insert(regAllocator.getRegId(code2));
         RegId regid = getTempReg();
         std::string reg1_64 = regAllocator.toReg64(regid);
         std::string reg1_8 = regAllocator.toReg8(regid);
