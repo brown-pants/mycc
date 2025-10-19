@@ -35,7 +35,7 @@ std::vector<Token> Lexer::exec()
         {
         //  #include
         case '#':
-            handle_include();
+            handle_sharp();
             break;
         //  ;
         case ';':
@@ -247,7 +247,7 @@ void Lexer::skip_white()
     } while (ch == ' ' || ch == '\t' || ch == '\n');
 }
 
-void Lexer::handle_include()
+void Lexer::handle_sharp()
 {
     if (peek_pre() != '\n')
     {
@@ -274,6 +274,7 @@ void Lexer::handle_include()
     }
     line = std::stoi(row);
     file = file_name;
+    next();
 }
 
 Token Lexer::getIdentifier()

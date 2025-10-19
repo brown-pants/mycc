@@ -26,7 +26,7 @@ private:
     char peek_next() const;
     char peek_pre() const;
     void skip_white();
-    void handle_include();
+    void handle_sharp();
 
     Token getIdentifier();
     Token getIntFloat();

@@ -55,6 +55,7 @@ std::string Preprocessor::exec()
                 std::getline(*file_info.fs, line);
                 file_info.curLine ++;
                 output.erase(output.length() - 1);
+                output += '\n';
                 lineHead = true;
                 preCh = '\0';
                 continue;
