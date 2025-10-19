@@ -9,6 +9,11 @@ Preprocessor::Preprocessor(const std::string &file_name)
 std::string Preprocessor::exec()
 {
     FileInfo file_info = openFile(file_name);
+    if (m_hasError)
+    {
+        Debug::OpenFileError(file_name, file_name);
+        return "";
+    }
     file_stack.push(file_info);
     output += "# 1 \"" + file_name + "\"\n";
 
@@ -163,6 +168,10 @@ void Preprocessor::handle_include(const std::string &line, const FileInfo &file_
     }
 
     FileInfo info = openFile(include_file);
+    if (m_hasError)
+    {
+        Debug::OpenFileError(file_info.file_name + ":" + std::to_string(file_info.curLine), include_file);
+    }
     file_stack.push(info);
 
     // erase white

@@ -4,19 +4,6 @@
 #include <sstream>
 #include <iostream>
 
-std::string Util::ReadFile(const std::string &fileName)
-{
-    std::ifstream ifs(fileName);
-    if (!ifs.is_open())
-    {
-        std::cout << "read file error: " << fileName << std::endl;
-        exit(-1);
-    }
-    std::ostringstream oss;
-    oss << ifs.rdbuf();
-    return oss.str();
-}
-
 void Util::WriteFile(const std::string &fileName, const std::string &str)
 {
     std::ofstream outFile(fileName);

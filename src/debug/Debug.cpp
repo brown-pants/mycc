@@ -54,14 +54,19 @@ void Debug::NoInput()
     std::cout << "compilation terminated." << std::endl;
 }
 
-void Debug::InvalidPreprocessing(const std::string file_name, int line, const std::string &instru)
+void Debug::InvalidPreprocessing(const std::string &file_name, int line, const std::string &instru)
 {
     std::cout << file_name << ":" << line << ": " << red << "error: " << white << "invalid preprocessing directive #" << instru << std::endl;
 }
 
-void Debug::IncludeExpects(const std::string file_name, int line)
+void Debug::IncludeExpects(const std::string &file_name, int line)
 {
     std::cout << file_name << ":" << line << ": " << red << "error: " << white << "#include expects \"FILENAME\"" << std::endl;
+}
+
+void Debug::OpenFileError(const std::string &head, const std::string &file_name)
+{
+    std::cout << head << ": " << red << "fatal error: " << white << file_name << " no such file or directory" << std::endl;
 }
 
 void Debug::LexicalError(const Token &token)

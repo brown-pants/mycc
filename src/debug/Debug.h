@@ -12,8 +12,9 @@ class Debug
 public:
     static void NoInput();
 
-    static void InvalidPreprocessing(const std::string file_name, int line, const std::string &instru);
-    static void IncludeExpects(const std::string file_name, int line);
+    static void InvalidPreprocessing(const std::string &file_name, int line, const std::string &instru);
+    static void IncludeExpects(const std::string &file_name, int line);
+    static void OpenFileError(const std::string &head, const std::string &file_name);
 
     static void LexicalError(const Token &token);
     static void ParseError(const Token &token1, Token::Type token2 = Token::Nul);
