@@ -14,6 +14,39 @@ putchar:
 	leave
 	retq
 
+.data
+newline:
+    .byte 10
+
+.text
+.globl puts
+puts:
+    pushq %rbp
+    movq %rsp, %rbp
+    movq 16(%rbp), %rsi
+    movq %rsi, %rdi
+.strlen_loop:
+    cmpb $0, (%rsi)
+    jz .strlen_done
+    incq %rsi
+    jmp .strlen_loop
+.strlen_done:
+    subq %rdi, %rsi
+    movq %rsi, %rdx
+    movq $1, %rax
+    movq $1, %rdi
+    movq 16(%rbp), %rsi
+    syscall
+    movq $1, %rax
+    movq $1, %rdi
+    leaq newline(%rip), %rsi
+    movq $1, %rdx
+    syscall
+    movq %rdx, %rax
+    incq %rax
+    popq %rbp
+    ret
+
 	.data
 shell:      .asciz "/bin/sh"
 shell_c:    .asciz "-c"

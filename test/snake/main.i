@@ -12,6 +12,8 @@
 # 1 "../stl/sys.h"
 extern void putchar(char ch);
 
+extern void puts(char *str);
+
 extern void system(char *cmd);
 
 extern void sleep(int sec);

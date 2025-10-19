@@ -199,7 +199,7 @@ bool RegAllocator::isTempVar(const std::string &var) const
 
 bool RegAllocator::hasTempVar(const std::string &var, std::string &temp_name) const
 {
-    if (var[0] == '*' || var[0] == '&' || var[0] == '!' || var[0] == '-' )
+    if (var[0] == '*')
     {
         temp_name = var.substr(1);
         return isTempVar(temp_name);

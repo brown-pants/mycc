@@ -1,5 +1,26 @@
+# 1 "../test/IfElse/IfElse.c"
 
-#include "../stl/sys.h"
+# 1 "../stl/sys.h"
+extern void putchar(char ch);
+
+extern void puts(char *str);
+
+extern void system(char *cmd);
+
+extern void sleep(int sec);
+
+extern void usleep(int usec);
+
+extern int kbhit();
+
+extern int getch();
+
+extern int rand();
+
+extern int srand(int seed);
+
+extern int time(int *seconds);
+# 3 "../test/IfElse/IfElse.c"
 void func(int n, int m)
 {
     if (n == 1)

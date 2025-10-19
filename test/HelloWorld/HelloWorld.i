@@ -1,6 +1,27 @@
+# 1 "../test/HelloWorld/HelloWorld.c"
 char arr[12];
 
-#include "../stl/sys.h"
+# 1 "../stl/sys.h"
+extern void putchar(char ch);
+
+extern void puts(char *str);
+
+extern void system(char *cmd);
+
+extern void sleep(int sec);
+
+extern void usleep(int usec);
+
+extern int kbhit();
+
+extern int getch();
+
+extern int rand();
+
+extern int srand(int seed);
+
+extern int time(int *seconds);
+# 4 "../test/HelloWorld/HelloWorld.c"
 
 void HelloWorld_1()
 {

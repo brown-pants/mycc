@@ -1,36 +1,50 @@
-	.global printInt
+	.global printPositiveInt
 	.text
-printInt:
+printPositiveInt:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $32, %rsp
-	movq 16(%rbp), %rax
-	movq %rax, -8(%rbp)
-	cmpq $0, -8(%rbp)
-	jne .lable0
+	subq $8, %rsp
+	movq 16(%rbp), %rdi
+	movq %rdi, -8(%rbp)
+	movq -8(%rbp), %rdi
+	testq %rdi, %rdi
+	jnz .lable0
 	jmp .lable1
 .lable0:
+	pushq %rax
+	pushq %rdx
+	pushq %rcx
 	movq -8(%rbp), %rax
 	cqto
 	movq $10, %rcx
 	idivq %rcx
-	movq %rax, -16(%rbp)
-	pushq -16(%rbp)
-	call printInt
+	movq %rax, %rax
+	popq %rcx
+	popq %rdx
 	addq $8, %rsp
+	pushq %rax
+	pushq %rax
+	call printPositiveInt
+	addq $8, %rsp
+	popq %rax
+	pushq %rax
+	pushq %rdx
+	pushq %rcx
 	movq -8(%rbp), %rax
 	cqto
 	movq $10, %rcx
 	idivq %rcx
-	movq %rdx, -24(%rbp)
-	movq -24(%rbp), %rax
-	addq $48, %rax
-	movq %rax, -32(%rbp)
-	pushq -32(%rbp)
+	movq %rdx, %rax
+	popq %rcx
+	popq %rdx
+	addq $8, %rsp
+	movq %rax, %rbx
+	addq $48, %rbx
+	pushq %rbx
 	call putchar
 	addq $8, %rsp
 .lable1:
-printInt_exit:
+printPositiveInt_exit:
 	leave
 	retq
 	.global printSignInt
@@ -38,36 +52,30 @@ printInt_exit:
 printSignInt:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $32, %rsp
-	movq 16(%rbp), %rax
-	movq %rax, -8(%rbp)
-	movq -8(%rbp), %rax
-	movq $0, %rbx
-	cmp %rbx, %rax
-	setl %cl
-	movzbq %cl, %rax
-	movq %rax, -16(%rbp)
-	cmpq $0, -16(%rbp)
-	jne .lable2
+	subq $8, %rsp
+	movq 16(%rbp), %rbx
+	movq %rbx, -8(%rbp)
+	movq -8(%rbp), %rbx
+	cmpq $0, %rbx
+	setl %bl
+	movzbq %bl, %rbx
+	testq %rbx, %rbx
+	jnz .lable2
 	jmp .lable3
 .lable2:
 	pushq $45
 	call putchar
 	addq $8, %rsp
-	movq -8(%rbp), %rax
-	negq %rax
-	movq %rax, -24(%rbp)
-	movq -24(%rbp), %rax
-	movq %rax, -8(%rbp)
+	movq -8(%rbp), %rbx
+	negq %rbx
+	movq %rbx, -8(%rbp)
 .lable3:
-	movq -8(%rbp), %rax
-	movq $0, %rbx
-	cmp %rbx, %rax
-	sete %cl
-	movzbq %cl, %rax
-	movq %rax, -32(%rbp)
-	cmpq $0, -32(%rbp)
-	jne .lable4
+	movq -8(%rbp), %rbx
+	cmpq $0, %rbx
+	sete %bl
+	movzbq %bl, %rbx
+	testq %rbx, %rbx
+	jnz .lable4
 	jmp .lable5
 .lable4:
 	pushq $48
@@ -76,7 +84,7 @@ printSignInt:
 	jmp .lable6
 .lable5:
 	pushq -8(%rbp)
-	call printInt
+	call printPositiveInt
 	addq $8, %rsp
 .lable6:
 	pushq $10
@@ -90,37 +98,30 @@ printSignInt_exit:
 factorial:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $48, %rsp
-	movq 16(%rbp), %rax
-	movq %rax, -8(%rbp)
+	subq $24, %rsp
+	movq 16(%rbp), %rbx
+	movq %rbx, -8(%rbp)
 	movq $1, -16(%rbp)
 	movq $2, -24(%rbp)
 .lable7:
-	movq -24(%rbp), %rax
-	movq -8(%rbp), %rbx
-	cmp %rbx, %rax
-	setng %cl
-	movzbq %cl, %rax
-	movq %rax, -32(%rbp)
-	cmpq $0, -32(%rbp)
-	jne .lable10
+	movq -24(%rbp), %rbx
+	cmpq -8(%rbp), %rbx
+	setng %bl
+	movzbq %bl, %rbx
+	testq %rbx, %rbx
+	jnz .lable10
 	jmp .lable8
 .lable10:
-	movq -16(%rbp), %rax
-	imulq -24(%rbp), %rax
-	movq %rax, -40(%rbp)
-	movq -40(%rbp), %rax
-	movq %rax, -16(%rbp)
+	movq -16(%rbp), %rbx
+	imulq -24(%rbp), %rbx
+	movq %rbx, -16(%rbp)
 .lable9:
-	movq -24(%rbp), %rax
-	addq $1, %rax
-	movq %rax, -48(%rbp)
-	movq -48(%rbp), %rax
-	movq %rax, -24(%rbp)
+	movq -24(%rbp), %rbx
+	addq $1, %rbx
+	movq %rbx, -24(%rbp)
 	jmp .lable7
 .lable8:
 	movq -16(%rbp), %rax
-	movq %rax, %rax
 	jmp factorial_exit
 factorial_exit:
 	leave
@@ -130,37 +131,86 @@ factorial_exit:
 factorial_recursion:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $48, %rsp
-	movq 16(%rbp), %rax
-	movq %rax, -8(%rbp)
-	movq -8(%rbp), %rax
-	movq $1, %rbx
-	cmp %rbx, %rax
-	sete %cl
-	movzbq %cl, %rax
-	movq %rax, -16(%rbp)
-	cmpq $0, -16(%rbp)
-	jne .lable11
+	subq $16, %rsp
+	movq 16(%rbp), %rbx
+	movq %rbx, -8(%rbp)
+	movq -8(%rbp), %rbx
+	cmpq $1, %rbx
+	sete %bl
+	movzbq %bl, %rbx
+	testq %rbx, %rbx
+	jnz .lable11
 	jmp .lable12
 .lable11:
 	movq $1, %rax
 	jmp factorial_recursion_exit
 .lable12:
-	movq -8(%rbp), %rax
-	subq $1, %rax
-	movq %rax, -32(%rbp)
-	pushq -32(%rbp)
+	movq -8(%rbp), %rbx
+	subq $1, %rbx
+	pushq %rbx
 	call factorial_recursion
 	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -40(%rbp)
+	movq %rax, %rbx
 	movq -8(%rbp), %rax
-	imulq -40(%rbp), %rax
-	movq %rax, -48(%rbp)
-	movq -48(%rbp), %rax
+	imulq %rbx, %rax
 	movq %rax, %rax
 	jmp factorial_recursion_exit
 factorial_recursion_exit:
+	leave
+	retq
+	.global fib
+	.text
+fib:
+	pushq %rbp
+	movq %rsp, %rbp
+	subq $8, %rsp
+	movq 16(%rbp), %rax
+	movq %rax, -8(%rbp)
+	movq -8(%rbp), %rax
+	cmpq $1, %rax
+	sete %al
+	movzbq %al, %rax
+	testq %rax, %rax
+	jnz .lable13
+	movq -8(%rbp), %rax
+	cmpq $2, %rax
+	sete %al
+	movzbq %al, %rax
+	testq %rax, %rax
+	jnz .lable13
+	jmp .lable14
+.lable13:
+	movq $1, %rax
+	jmp .lable15
+.lable14:
+	movq $0, %rax
+.lable15:
+	testq %rax, %rax
+	jnz .lable16
+	jmp .lable17
+.lable16:
+	movq $1, %rax
+	jmp fib_exit
+.lable17:
+	movq -8(%rbp), %rax
+	subq $1, %rax
+	pushq %rax
+	call fib
+	addq $8, %rsp
+	movq %rax, %rax
+	movq -8(%rbp), %rbx
+	subq $2, %rbx
+	pushq %rax
+	pushq %rbx
+	call fib
+	addq $8, %rsp
+	movq %rax, %rbx
+	popq %rax
+	movq %rax, %rcx
+	addq %rbx, %rcx
+	movq %rcx, %rax
+	jmp fib_exit
+fib_exit:
 	leave
 	retq
 	.global main
@@ -168,46 +218,50 @@ factorial_recursion_exit:
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $56, %rsp
-	pushq -8(%rbp)
+	pushq $5
+	call factorial
+	addq $8, %rsp
+	movq %rax, %rcx
+	pushq %rcx
 	call printSignInt
 	addq $8, %rsp
 	pushq $5
 	call factorial
 	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -16(%rbp)
-	pushq -16(%rbp)
+	movq %rax, %rcx
+	movq %rcx, %rbx
+	negq %rbx
+	pushq %rbx
+	call printSignInt
+	addq $8, %rsp
+	pushq $10
+	call factorial_recursion
+	addq $8, %rsp
+	movq %rax, %rbx
+	pushq %rbx
+	call printSignInt
+	addq $8, %rsp
+	pushq $10
+	call factorial_recursion
+	addq $8, %rsp
+	movq %rax, %rbx
+	movq %rbx, %rcx
+	negq %rcx
+	pushq %rcx
 	call printSignInt
 	addq $8, %rsp
 	pushq $5
-	call factorial
+	call fib
 	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -24(%rbp)
-	movq -24(%rbp), %rax
-	negq %rax
-	movq %rax, -32(%rbp)
-	pushq -32(%rbp)
+	movq %rax, %rcx
+	pushq %rcx
 	call printSignInt
 	addq $8, %rsp
-	pushq $10
-	call factorial_recursion
+	pushq $8
+	call fib
 	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -40(%rbp)
-	pushq -40(%rbp)
-	call printSignInt
-	addq $8, %rsp
-	pushq $10
-	call factorial_recursion
-	addq $8, %rsp
-	movq %rax, %rax
-	movq %rax, -48(%rbp)
-	movq -48(%rbp), %rax
-	negq %rax
-	movq %rax, -56(%rbp)
-	pushq -56(%rbp)
+	movq %rax, %rcx
+	pushq %rcx
 	call printSignInt
 	addq $8, %rsp
 main_exit:

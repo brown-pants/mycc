@@ -1,6 +1,27 @@
-#include "../stl/sys.h"
+# 1 "../test/Factorial/Factorial.c"
+# 1 "../stl/sys.h"
+extern void putchar(char ch);
 
-// 打印正整数
+extern void puts(char *str);
+
+extern void system(char *cmd);
+
+extern void sleep(int sec);
+
+extern void usleep(int usec);
+
+extern int kbhit();
+
+extern int getch();
+
+extern int rand();
+
+extern int srand(int seed);
+
+extern int time(int *seconds);
+# 2 "../test/Factorial/Factorial.c"
+
+
 void printPositiveInt(int a)
 {
     if (a) 
@@ -10,7 +31,7 @@ void printPositiveInt(int a)
     }
 }
 
-// 打印有符号整数
+
 void printSignInt(int a)
 {
     if (a < 0)
@@ -26,7 +47,7 @@ void printSignInt(int a)
     putchar('\n');
 }
 
-// 计算阶乘
+
 int factorial(int n)
 {
     int s;
@@ -40,7 +61,7 @@ int factorial(int n)
     return s;
 }
 
-// 计算阶乘(递归)
+
 int factorial_recursion(int n)
 {
     if (n == 1) return 1;
@@ -48,8 +69,8 @@ int factorial_recursion(int n)
     return n * factorial_recursion(n - 1);
 }
 
-// 1 1 2 3 5 8 13 21
-// 计算斐波那契数列(递归)
+
+
 int fib(int n)
 {
     if (n == 1 || n == 2) return 1;
