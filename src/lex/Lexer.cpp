@@ -36,7 +36,7 @@ std::vector<Token> Lexer::exec()
         //  #include
         case '#':
             handle_sharp();
-            break;
+        break;
         //  ;
         case ';':
             tokens.push_back(Token(Token::Semicolon, ";", file, line));

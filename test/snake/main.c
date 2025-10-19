@@ -1,12 +1,16 @@
-extern void putchar(char ch);
-extern void system(char *cmd);
-extern void usleep(int usec);
-extern int kbhit();
-extern int getch();
-extern int rand();
-extern int srand(int seed);
-extern int time(int *seconds);
+/*
+    贪吃蛇小游戏
+    ###########
+    #  * @++  #
+    #      +  #
+    #      +  #
+    ###########
+*/
 
+// 添加系统头文件
+# include "../../stl/sys.h"
+
+// 声明全局变量 (定义/初始化 在 "./data.c" 中)
 extern int Width;
 extern int Height;
 extern char Map[100 * 50];
@@ -17,6 +21,7 @@ extern int snake_len;
 extern int exit;
 extern int grown;
 
+/*随机生成一个食物*/
 void new_food()
 {
     int x = (rand() + 1) % (Width - 1);
@@ -31,6 +36,7 @@ void new_food()
     }
 }
 
+/*初始化地图、蛇身、随机数种子，生成第一个食物*/
 void init()
 {
     int i;
@@ -66,6 +72,7 @@ void init()
     new_food();
 }
 
+/*绘制地图*/
 void draw()
 {
     system("TERM=xterm clear");
@@ -83,6 +90,7 @@ void draw()
     }
 }
 
+/*更新状态*/
 void update()
 {
     int i;
@@ -152,6 +160,7 @@ void update()
     }
 }
 
+/*程序入口*/
 int main()
 {
     init();
@@ -167,3 +176,7 @@ int main()
     }
     return 0;
 }
+
+/*
+    结束...
+*/

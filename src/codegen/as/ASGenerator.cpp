@@ -191,7 +191,10 @@ void ASGenerator::begin_func(const std::string &func_name)
 
 void ASGenerator::end_func(const std::string &func_name)
 {
-    asc.insert(sub_rsp_pos, "\tsubq $" + std::to_string(-mOffset) + ", %rsp\n");      //      subq ${-mOffset}, %rsp
+    if (mOffset != 0)
+    {  
+        asc.insert(sub_rsp_pos, "\tsubq $" + std::to_string(-mOffset) + ", %rsp\n");      //      subq ${-mOffset}, %rsp
+    }
     asc += "\tleave\n";                                         //      {func_name}:
     asc += "\tretq\n";                                          //      retq
     // clear
@@ -282,15 +285,38 @@ void ASGenerator::goto_label(const std::string &label_name)
 void ASGenerator::if_goto(const std::string &condition, const std::string &label)
 {
     std::string result_code = getVarCode(condition);
-    if (isOneByteType(condition))
+    bool oneByte = isOneByteType(condition);
+    if (isRegister(result_code))
     {
-        asc += "\tcmpb $0, " + result_code + "\n";      //      cmpb $0, {condition}
+        if (oneByte)
+        {
+            RegId regid = regAllocator.getRegId(result_code);
+            std::string reg8 = regAllocator.toReg8(regid);
+            asc += "\ttestb " + reg8 + ", " + reg8 + "\n";                  //      testb {reg8}, {reg8}
+        }
+        else
+        {
+            asc += "\ttestq " + result_code + ", " + result_code + "\n";    //      testq {condition}, {condition}
+        }
     }
     else
     {
-        asc += "\tcmpq $0, " + result_code + "\n";      //      cmpq $0, {condition}
+        RegId regid = getTempReg();
+        if (oneByte)
+        {
+            std::string reg8 = regAllocator.toReg8(regid);
+            asc += "\tmovb " + result_code + ", " + reg8 + "\n";             //      movb {condition}, {reg8}
+            asc += "\ttestb " + reg8 + ", " + reg8 + "\n";                  //      testb {reg8}, {reg8}
+        }
+        else
+        {
+            std::string reg64 = regAllocator.toReg64(regid);
+            asc += "\tmovq " + result_code + ", " + reg64 + "\n";           //      movq {condition}, {reg64}
+            asc += "\ttestq " + reg64 + ", " + reg64 + "\n";                //      testq {reg64}, {reg64}
+        }
+        freeTempRegs();
     }
-    asc += "\tjne " + label + "\n";                     //      jne {label}
+    asc += "\tjnz " + label + "\n";                                         //      jnz {label}
 }
 
 void ASGenerator::assign(const std::string &arg, const std::string &result)
@@ -472,8 +498,11 @@ void ASGenerator::call_func(const std::string &params_count, const std::string &
         }
     }
     
-    asc += "\tcall " + func_name + "\n";                                                //      call {func_name}
-    asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
+    asc += "\tcall " + func_name + "\n";                                                    //      call {func_name}
+    if (params_count != "0")
+    {
+        asc += "\taddq $" + std::to_string(std::stoll(params_count) * 8) + ", %rsp\n";      //      addq ${params_size}, %rsp
+    }
 
     ret_type = return_type;
     save_reg_pos = -1;
