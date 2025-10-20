@@ -87,6 +87,7 @@ private:
     void dec_var(bool local, const Token &type, const Token &id, const std::string &value = "", const std::string &arr_ptr = "", int arrSize = 1);
     void dec_function(const Token &type, bool returnPointer, const Token &id, const Parser::TreeNode &dec_tail);
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type, bool defineParams = true);
+    std::string constant_additive(OpType op, const std::string &arg1, const std::string &arg2);
     std::string do_expression(const Parser::TreeNode &node);
     std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id);
     int passing_params(const Parser::TreeNode &node);

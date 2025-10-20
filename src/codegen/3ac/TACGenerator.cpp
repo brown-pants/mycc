@@ -169,6 +169,10 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             if (iter != tempValues.end())
             {
                 value = iter->second;
+                while (!code.empty() && (code.back().op == Op_address || code.back().op == Op_add || code.back().op == Op_sub))
+                {
+                    code.pop_back();
+                }
             }
             if (!isNumber(value) && value[0] != '&')
             {
@@ -685,6 +689,68 @@ void TACGenerator::dec_params(const Parser::TreeNode &node, std::vector<Token::T
 
 }
 
+std::string TACGenerator::constant_additive(OpType op, const std::string &arg1, const std::string &arg2)
+{
+    struct Values
+    {
+        long long constant;
+        std::string var;
+        bool neg = false;
+    };
+    auto getValues = [this](OpType op, const std::string &arg1, const std::string &arg2) -> Values
+    {
+        Values value;
+        if (isNumber(arg1))
+        {
+            value.constant = std::stoll(arg1);
+            value.var = arg2;
+            if (op == Op_sub)
+            {
+                value.neg = true;
+            }
+        }
+        else
+        {
+            value.constant = std::stoll(arg2);
+            value.var = arg1;
+            if (op == Op_sub)
+            {
+                value.constant = -value.constant;
+            }
+        }
+        return value;
+    };
+    Values value_1 = getValues(op, arg1, arg2);
+    if (value_1.var.substr(0, 2) != "t^" || code.back().op != Op_add && code.back().op != Op_sub || !isNumber(code.back().arg1) && !isNumber(code.back().arg2))
+    {
+        std::string temp3 = new_temp();
+        code.push_back({ op, arg1, arg2, temp3 });
+        if (tempValues.find(value_1.var) != tempValues.end())
+        {
+            tempValues[temp3] = tempValues[value_1.var] + (op == Op_add ? " + " : " - ") + std::to_string(value_1.constant);
+        }
+        return temp3;
+    }
+    Values value_2 = getValues(code.back().op, code.back().arg1, code.back().arg2);
+    code.pop_back();
+    std::string var_str = value_2.var;
+    std::string constant_str = std::to_string(value_1.constant + value_2.constant * (value_1.neg ? -1 : 1));
+    bool neg = value_1.neg ^ value_2.neg; // xor
+    if (neg)
+    {
+        std::string temp_neg = new_temp();
+        code.push_back({ Op_neg, value_2.var, "", temp_neg });
+        var_str = temp_neg;
+    }
+    std::string temp3 = new_temp();
+    code.push_back({ Op_add, var_str, constant_str, temp3 });
+    if (tempValues.find(var_str) != tempValues.end())
+    {
+        tempValues[temp3] = tempValues[var_str] + " + " + constant_str;
+    }
+    return temp3;
+}
+
 std::string TACGenerator::do_expression(const Parser::TreeNode &node)
 {
     /* <expression> -> <or_expression> <expression_tail> */
@@ -1007,31 +1073,33 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                     ptr = temp2;
                     idx = temp1;
                 }
-                std::string temp = new_temp();
-                pointerTemps.insert(std::pair<std::string, unsigned int>(temp, stride));
+                std::string temp;
                 // idx is num
                 if (isNumber(idx))
                 {
                     long long offset = std::stoll(idx) * stride;
                     if (offset == 0)
                     {
+                        temp = new_temp();
                         code.push_back({ Op_assign, ptr, "", temp });
                     }
                     else
                     {
-                        code.push_back({ op, ptr, std::to_string(offset), temp });
+                        temp = constant_additive(op, ptr, std::to_string(offset));
                     }
                 }
                 // idx is var
                 else
                 {
+                    temp = new_temp();
                     std::string offset_temp = new_temp();
                     code.push_back({ Op_mult, idx, std::to_string(stride), offset_temp });
                     code.push_back({ op, ptr, offset_temp, temp });
                 }
+                pointerTemps.insert(std::pair<std::string, unsigned int>(temp, stride));
                 temp1 = temp;
             }
-            // Neither arg1 nor agr2 is pointer
+            // handle 0
             else if (temp1 == "0" && op == Op_add)
             {
                 temp1 = temp2;
@@ -1046,6 +1114,12 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 continue;
             }
+            // handle constant
+            else if (isNumber(temp1) || isNumber(temp2))
+            {
+                temp1 = constant_additive(op, temp1, temp2);
+            }
+            // var op var
             else
             {
                 std::string temp3 = new_temp();
@@ -1112,6 +1186,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
                 Debug::InvalidOperands(mulop.tokens[0]);
                 m_hasError = true;
             }
+            // handle 0 and -1
             else if (op == Op_mult && (temp1 == "0" || temp2 == "0"))
             {
                 temp1 = "0";
@@ -1140,6 +1215,51 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             {
                 temp1 = "0";
             }
+            // handle constant
+            else if (op != Op_mod && (isNumber(temp1) || isNumber(temp2)))
+            {
+                struct Values
+                {
+                    long long constant;
+                    std::string var;
+                };
+                auto getValues = [this](const std::string &arg1, const std::string &arg2) -> Values
+                {
+                    Values value;
+                    if (isNumber(arg1))
+                    {
+                        value.constant = std::stoll(arg1);
+                        value.var = arg2;
+                    }
+                    else
+                    {
+                        value.constant = std::stoll(arg2);
+                        value.var = arg1;
+                    }
+                    return value;
+                };
+                Values value_1 = getValues(temp1, temp2);
+                if (value_1.var.substr(0, 2) != "t^" || 
+                    isNumber(temp1) && op == Op_div || 
+                    code.back().op != Op_mult && code.back().op != Op_div || 
+                    !isNumber(code.back().arg1) && !isNumber(code.back().arg2) || 
+                    code.back().op == Op_div && isNumber(code.back().arg1) || 
+                    code.back().op != op)
+                {
+                    std::string temp3 = new_temp();
+                    code.push_back({ op, temp1, temp2, temp3 });
+                    temp1 = temp3;
+                    continue;
+                }
+                Values value_2 = getValues(code.back().arg1, code.back().arg2);
+                code.pop_back();
+                std::string var_str = value_2.var;
+                std::string constant_str = std::to_string(value_1.constant * value_2.constant);
+                std::string temp3 = new_temp();
+                code.push_back({ op, var_str, constant_str, temp3 });
+                temp1 = temp3;
+            }
+            // var op var
             else
             {
                 std::string temp3 = new_temp();

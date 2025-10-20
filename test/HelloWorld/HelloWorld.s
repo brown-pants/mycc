@@ -144,7 +144,6 @@ HelloWorld_2:
 HelloWorld_2_exit:
 	leave
 	retq
-	leaq .str0(%rip), %rax
 	.global S
 	.data
 S:
