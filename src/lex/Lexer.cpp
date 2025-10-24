@@ -294,6 +294,7 @@ Token Lexer::getIdentifier()
     {
         token = it->second;
         token.setLine(line);
+        token.setFile(file);
     }
     else
     {

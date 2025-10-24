@@ -161,7 +161,7 @@ void Debug::PrintTokens(const std::vector<Token> &tokens)
     std::cout << green << "Tokens:" << white << std::endl;
     for (auto token : tokens)
     {
-        std::cout << "Token( " << TokenTypeMap[token.type()] << " '" << token.lexeme() << "' " << token.line() << " )" << std::endl;
+        std::cout << "Token( " << TokenTypeMap[token.type()] << " '" << token.lexeme() << "' " << token.line() << " \"" << token.file() << "\" )" << std::endl;
     }
     std::cout << std::endl;
 }
