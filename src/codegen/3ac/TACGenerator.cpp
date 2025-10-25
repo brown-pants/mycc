@@ -14,7 +14,7 @@ TACGenerator::TACGenerator(const Parser::TreeNode &root)
     scopeStack.push(".global");
 }
 
-const std::vector<TACGenerator::Quaternion> &TACGenerator::exec()
+std::vector<TACGenerator::Quaternion> &TACGenerator::exec()
 {
     generate_3ac(root);
     return code;

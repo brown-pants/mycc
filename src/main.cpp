@@ -4,6 +4,7 @@
 #include "lex/Lexer.h"
 #include "parse/Parser.h"
 #include "codegen/3ac/TACGenerator.h"
+#include "codegen/3ac/TACOptimizer.h"
 #include "codegen/as/ASGenerator.h"
 #include "symtab/SymbolTable.h"
 #include <stdlib.h>
@@ -87,12 +88,15 @@ int main(int argc, char *argv[])
         }
 
         TACGenerator tacGenerator(astRoot);
-        const std::vector<TACGenerator::Quaternion> &tac = tacGenerator.exec();
+        std::vector<TACGenerator::Quaternion> &tac = tacGenerator.exec();
 
         if (tacGenerator.hasError())
         {
             return -1;
         }
+
+        TACOptimizer tacOptimizer;
+        tacOptimizer.opt(tac);
 
         Debug::PrintTAC(tac);
 

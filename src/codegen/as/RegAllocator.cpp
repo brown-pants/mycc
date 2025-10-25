@@ -166,6 +166,11 @@ void RegAllocator::freeReg(RegId reg)
     m_regPool.insert(reg);
 }
 
+bool RegAllocator::isFreeReg(RegId reg)
+{
+    return m_regPool.find(reg) != m_regPool.end();
+}
+
 std::vector<RegAllocator::RegId> RegAllocator::freeVarRegs(int idx)
 {
     auto iter = m_regEnds.find(idx);
@@ -190,6 +195,12 @@ RegAllocator::RegId RegAllocator::getRegId(const std::string &regStr)
         }
     }
     return Nul;
+}
+
+bool RegAllocator::isInvalidVar(const std::string &var)
+{
+    auto iter = m_activeIntervals.find(var);
+    return (iter != m_activeIntervals.end() && iter->second.begin == iter->second.end);
 }
 
 bool RegAllocator::isTempVar(const std::string &var) const 

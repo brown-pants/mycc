@@ -277,6 +277,6 @@ void Debug::PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAlloc
         {
             reg = std::to_string(it->second);
         }
-        std::cout << iter.first << ": " << iter.second.begin << " ~ " << iter.second.end << "\t\treg: " << reg << std::endl;
+        std::cout << iter.first << ": " << iter.second.begin << " ~ " << iter.second.end << "\t\treg: " << reg << (iter.second.begin == iter.second.end ? "\t\tinvalid" : "") << std::endl;
     }
 }

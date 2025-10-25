@@ -53,7 +53,7 @@ public:
     };
 
     TACGenerator(const Parser::TreeNode &root);
-    const std::vector<Quaternion> &exec();
+    std::vector<Quaternion> &exec();
 
     bool hasError() const;
 

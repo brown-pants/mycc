@@ -15,7 +15,6 @@ new_food:
 	subq $1, %rax
 	movq %rax, %rdi
 	pushq %rax
-	pushq %rdx
 	pushq %rcx
 	movq %rbx, %rax
 	cqto
@@ -23,7 +22,6 @@ new_food:
 	idivq %rcx
 	movq %rdx, %rcx
 	addq $8, %rsp
-	popq %rdx
 	popq %rax
 	movq %rcx, -8(%rbp)
 	call rand
@@ -33,7 +31,6 @@ new_food:
 	movq Height(%rip), %rcx
 	subq $1, %rcx
 	pushq %rax
-	pushq %rdx
 	pushq %rcx
 	movq %rax, %rax
 	cqto
@@ -41,7 +38,6 @@ new_food:
 	idivq %rcx
 	movq %rdx, %rbx
 	popq %rcx
-	popq %rdx
 	popq %rax
 	movq %rbx, -16(%rbp)
 	movq -16(%rbp), %rbx
@@ -77,7 +73,6 @@ new_food:
 .lable1:
 	call new_food
 .lable2:
-new_food_exit:
 	leave
 	retq
 	.global init
@@ -96,17 +91,11 @@ init:
 	jnz .lable6
 	jmp .lable4
 .lable6:
-	pushq %rax
-	pushq %rdx
-	pushq %rcx
 	movq Width(%rip), %rax
 	cqto
 	movq $2, %rcx
 	idivq %rcx
 	movq %rax, %rbx
-	popq %rcx
-	popq %rdx
-	popq %rax
 	movq %rbx, %rcx
 	addq -8(%rbp), %rcx
 	movq -8(%rbp), %rbx
@@ -115,24 +104,19 @@ init:
 	movq %rax, %rdx
 	addq %rbx, %rdx
 	movq %rcx, (%rdx)
-	pushq %rax
 	pushq %rdx
-	pushq %rcx
 	movq Height(%rip), %rax
 	cqto
 	movq $2, %rcx
 	idivq %rcx
 	movq %rax, %rdx
-	popq %rcx
 	addq $8, %rsp
-	popq %rax
 	movq -8(%rbp), %rcx
 	imulq $8, %rcx
 	leaq snake_y(%rip), %rax
 	movq %rax, %rbx
 	addq %rcx, %rbx
 	movq %rdx, (%rbx)
-.lable5:
 	movq -8(%rbp), %rbx
 	addq $1, %rbx
 	movq %rbx, -8(%rbp)
@@ -216,13 +200,11 @@ init:
 	movq $32, %rax
 	movb %al, (%rdx)
 .lable20:
-.lable13:
 	movq -16(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -16(%rbp)
 	jmp .lable11
 .lable12:
-.lable9:
 	movq -8(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -8(%rbp)
@@ -285,7 +267,6 @@ init:
 	movq $43, %rax
 	movb %al, (%rbx)
 .lable27:
-.lable23:
 	movq -8(%rbp), %rbx
 	addq $1, %rbx
 	movq %rbx, -8(%rbp)
@@ -298,9 +279,7 @@ init:
 	pushq %rbx
 	call srand
 	addq $8, %rsp
-	movq %rax, %rbx
 	call new_food
-init_exit:
 	leave
 	retq
 	.global draw
@@ -348,7 +327,6 @@ draw:
 	pushq %rdx
 	call putchar
 	addq $8, %rsp
-.lable34:
 	movq -16(%rbp), %rdx
 	addq $1, %rdx
 	movq %rdx, -16(%rbp)
@@ -357,13 +335,11 @@ draw:
 	pushq $10
 	call putchar
 	addq $8, %rsp
-.lable30:
 	movq -8(%rbp), %rdx
 	addq $1, %rdx
 	movq %rdx, -8(%rbp)
 	jmp .lable28
 .lable29:
-draw_exit:
 	leave
 	retq
 	.global update
@@ -468,7 +444,6 @@ update:
 	addq %rax, %rdx
 	movq (%rbx), %rcx
 	movq %rcx, (%rdx)
-.lable41:
 	movq -8(%rbp), %rcx
 	subq $1, %rcx
 	movq %rcx, -8(%rbp)
@@ -485,7 +460,7 @@ update:
 	movq snake_x(%rip), %rcx
 	subq $1, %rcx
 	movq %rcx, snake_x(%rip)
-	jmp .lable45
+	jmp .lable51
 .lable44:
 	movq dir(%rip), %rcx
 	cmpq $1, %rcx
@@ -498,7 +473,7 @@ update:
 	movq snake_x(%rip), %rcx
 	addq $1, %rcx
 	movq %rcx, snake_x(%rip)
-	jmp .lable48
+	jmp .lable51
 .lable47:
 	movq dir(%rip), %rcx
 	cmpq $2, %rcx
@@ -517,8 +492,6 @@ update:
 	addq $1, %rcx
 	movq %rcx, snake_y(%rip)
 .lable51:
-.lable48:
-.lable45:
 	movq snake_x(%rip), %rcx
 	movq %rcx, -32(%rbp)
 	movq snake_y(%rip), %rcx
@@ -561,8 +534,7 @@ update:
 	jmp .lable56
 .lable55:
 	movq $1, exit(%rip)
-	jmp update_exit
-	jmp .lable57
+	jmp .lable84
 .lable56:
 	movq -48(%rbp), %rdx
 	movzbq (%rdx), %rbx
@@ -577,7 +549,6 @@ update:
 	movq $1, grown(%rip)
 	call new_food
 .lable59:
-.lable57:
 	movq -48(%rbp), %rdx
 	movq $64, %rbx
 	movb %bl, (%rdx)
@@ -585,7 +556,7 @@ update:
 	movq %rax, %rdx
 	testq %rdx, %rdx
 	jnz .lable60
-	jmp .lable61
+	jmp .lable84
 .lable60:
 	call getch
 	movq %rax, %rdx
@@ -622,7 +593,7 @@ update:
 	jmp .lable66
 .lable65:
 	movq $0, dir(%rip)
-	jmp .lable67
+	jmp .lable84
 .lable66:
 	movsbq -49(%rbp), %rdx
 	cmpq $100, %rdx
@@ -656,7 +627,7 @@ update:
 	jmp .lable72
 .lable71:
 	movq $1, dir(%rip)
-	jmp .lable73
+	jmp .lable84
 .lable72:
 	movsbq -49(%rbp), %rdx
 	cmpq $119, %rdx
@@ -690,7 +661,7 @@ update:
 	jmp .lable78
 .lable77:
 	movq $2, dir(%rip)
-	jmp .lable79
+	jmp .lable84
 .lable78:
 	movsbq -49(%rbp), %rdx
 	cmpq $115, %rdx
@@ -725,11 +696,6 @@ update:
 .lable83:
 	movq $3, dir(%rip)
 .lable84:
-.lable79:
-.lable73:
-.lable67:
-.lable61:
-update_exit:
 	leave
 	retq
 	.global main
@@ -741,10 +707,7 @@ main:
 .lable85:
 	movq exit(%rip), %rdx
 	testq %rdx, %rdx
-	jnz .lable87
-	jmp .lable88
-.lable87:
-	jmp .lable86
+	jnz .lable86
 .lable88:
 	call draw
 	call update
@@ -754,8 +717,6 @@ main:
 	jmp .lable85
 .lable86:
 	movq $0, %rax
-	jmp main_exit
-main_exit:
 	leave
 	retq
 	.global _start

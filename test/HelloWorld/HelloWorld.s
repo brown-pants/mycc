@@ -72,7 +72,6 @@ HelloWorld_1:
 	pushq %rbx
 	call puts
 	addq $8, %rsp
-HelloWorld_1_exit:
 	leave
 	retq
 	.global HelloWorld_2
@@ -141,7 +140,6 @@ HelloWorld_2:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-HelloWorld_2_exit:
 	leave
 	retq
 	.global S
@@ -168,7 +166,6 @@ main:
 	pushq -8(%rbp)
 	call puts
 	addq $8, %rsp
-main_exit:
 	leave
 	retq
 	.global _start

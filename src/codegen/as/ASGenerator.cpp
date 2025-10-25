@@ -12,6 +12,10 @@ std::string ASGenerator::exec()
     for (int idx = 0; idx < tac.size(); idx ++)
     {
         const TACGenerator::Quaternion &code = tac[idx];
+        if (regAllocator.isInvalidVar(code.result))
+        {
+            continue;
+        }
         switch(code.op)
         {
         case TACGenerator::Op_global_init:
@@ -867,19 +871,34 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     // idivq
     if (op == "/" || op == "%")
     {
+        RegId raxId = regAllocator.getRegId("%rax");
+        RegId rdxId = regAllocator.getRegId("%rdx");
+        RegId rcxId = regAllocator.getRegId("%rcx");
+        bool isRaxFree = regAllocator.isFreeReg(raxId);
+        bool isRdxFree = regAllocator.isFreeReg(rdxId);
+        bool isRcxFree = regAllocator.isFreeReg(rcxId);
         if (code2 == "%rax" || code2 == "%rdx")
         {
-            m_ignoreRegs.insert(regAllocator.getRegId("%rax"));
-            m_ignoreRegs.insert(regAllocator.getRegId("%rdx"));
+            m_ignoreRegs.insert(raxId);
+            m_ignoreRegs.insert(rdxId);
             m_ignoreRegs.insert(regAllocator.getRegId(code1));
             RegId regid = getTempReg();
             std::string reg64 = regAllocator.toReg64(regid);
             asc += "\tmovq " + code2 + ", " + reg64 + "\n"; //  movq {%rax | %rdx}, {reg64}
             code2 = reg64;
         }
-        asc += "\tpushq %rax\n";                            //  pushq %rax
-        asc += "\tpushq %rdx\n";                            //  pushq %rdx
-        asc += "\tpushq %rcx\n";                            //  pushq %rcx
+        if (!isRaxFree)
+        {
+            asc += "\tpushq %rax\n";                        //  pushq %rax
+        }
+        if (!isRdxFree)
+        {
+            asc += "\tpushq %rdx\n";                        //  pushq %rdx
+        }
+        if (!isRcxFree)
+        {
+            asc += "\tpushq %rcx\n";                        //  pushq %rcx
+        }
         asc += "\t" + mov1 + " " + code1 + ", %rax\n";      //  {movq | movabsq | movsbq} {arg1}, %rax
         asc += "\tcqto\n";                                  //  cqto
         asc += "\t" + mov2 + " " + code2 + ", %rcx\n";      //  {movq | movabsq | movsbq} {arg2}, %rcx
@@ -900,14 +919,26 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
             std::string reg;
             if (i == 0)
             {
+                if (isRcxFree)
+                {
+                    continue;
+                }
                 reg = "%rcx";
             }
             else if (i == 1)
             {
+                if (isRdxFree)
+                {
+                    continue;
+                }
                 reg = "%rdx";
             }
             else
             {
+                if (isRaxFree)
+                {
+                    continue;
+                }
                 reg = "%rax";
             }
             if (result_code == reg)

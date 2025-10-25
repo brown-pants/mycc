@@ -39,8 +39,10 @@ public:
     RegId getOneReg();
     RegId getVarReg(const std::string &temp_var);
     void freeReg(RegId reg);
+    bool isFreeReg(RegId reg);
     std::vector<RegId> freeVarRegs(int idx);
     RegId getRegId(const std::string &regStr);
+    bool isInvalidVar(const std::string &var);
 
 private:
     std::unordered_set<RegId> m_regPool

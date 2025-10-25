@@ -76,7 +76,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable4
+	jmp .lable44
 .lable3:
 	movq -16(%rbp), %rax
 	cmpq $2, %rax
@@ -90,7 +90,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable7
+	jmp .lable44
 .lable6:
 	movq -16(%rbp), %rax
 	cmpq $3, %rax
@@ -104,16 +104,13 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable10
+	jmp .lable44
 .lable9:
 	leaq .str3(%rip), %rax
 	pushq %rax
 	call puts
 	addq $8, %rsp
-.lable10:
-.lable7:
-.lable4:
-	jmp .lable11
+	jmp .lable44
 .lable1:
 	movq -8(%rbp), %rax
 	cmpq $2, %rax
@@ -135,7 +132,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable16
+	jmp .lable44
 .lable15:
 	movq -16(%rbp), %rax
 	cmpq $2, %rax
@@ -149,7 +146,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable19
+	jmp .lable44
 .lable18:
 	movq -16(%rbp), %rax
 	cmpq $3, %rax
@@ -163,16 +160,13 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable22
+	jmp .lable44
 .lable21:
 	leaq .str7(%rip), %rax
 	pushq %rax
 	call puts
 	addq $8, %rsp
-.lable22:
-.lable19:
-.lable16:
-	jmp .lable23
+	jmp .lable44
 .lable13:
 	movq -8(%rbp), %rax
 	cmpq $3, %rax
@@ -194,7 +188,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable28
+	jmp .lable44
 .lable27:
 	movq -16(%rbp), %rax
 	cmpq $2, %rax
@@ -208,7 +202,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable31
+	jmp .lable44
 .lable30:
 	movq -16(%rbp), %rax
 	cmpq $3, %rax
@@ -222,16 +216,13 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable34
+	jmp .lable44
 .lable33:
 	leaq .str11(%rip), %rax
 	pushq %rax
 	call puts
 	addq $8, %rsp
-.lable34:
-.lable31:
-.lable28:
-	jmp .lable35
+	jmp .lable44
 .lable25:
 	movq -16(%rbp), %rax
 	cmpq $1, %rax
@@ -245,7 +236,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable38
+	jmp .lable44
 .lable37:
 	movq -16(%rbp), %rax
 	cmpq $2, %rax
@@ -259,7 +250,7 @@ func:
 	pushq %rax
 	call puts
 	addq $8, %rsp
-	jmp .lable41
+	jmp .lable44
 .lable40:
 	movq -16(%rbp), %rax
 	cmpq $3, %rax
@@ -280,12 +271,6 @@ func:
 	call puts
 	addq $8, %rsp
 .lable44:
-.lable41:
-.lable38:
-.lable35:
-.lable23:
-.lable11:
-func_exit:
 	leave
 	retq
 	.global main
@@ -318,21 +303,17 @@ main:
 	pushq -8(%rbp)
 	call func
 	addq $16, %rsp
-.lable51:
 	movq -16(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -16(%rbp)
 	jmp .lable49
 .lable50:
-.lable47:
 	movq -8(%rbp), %rax
 	addq $1, %rax
 	movq %rax, -8(%rbp)
 	jmp .lable45
 .lable46:
 	movq $0, %rax
-	jmp main_exit
-main_exit:
 	leave
 	retq
 	.global _start

@@ -44,7 +44,6 @@ printPositiveInt:
 	call putchar
 	addq $8, %rsp
 .lable1:
-printPositiveInt_exit:
 	leave
 	retq
 	.global printSignInt
@@ -90,7 +89,6 @@ printSignInt:
 	pushq $10
 	call putchar
 	addq $8, %rsp
-printSignInt_exit:
 	leave
 	retq
 	.global factorial
@@ -115,15 +113,12 @@ factorial:
 	movq -16(%rbp), %rbx
 	imulq -24(%rbp), %rbx
 	movq %rbx, -16(%rbp)
-.lable9:
 	movq -24(%rbp), %rbx
 	addq $1, %rbx
 	movq %rbx, -24(%rbp)
 	jmp .lable7
 .lable8:
 	movq -16(%rbp), %rax
-	jmp factorial_exit
-factorial_exit:
 	leave
 	retq
 	.global factorial_recursion
@@ -154,7 +149,6 @@ factorial_recursion:
 	movq -8(%rbp), %rax
 	imulq %rbx, %rax
 	movq %rax, %rax
-	jmp factorial_recursion_exit
 factorial_recursion_exit:
 	leave
 	retq
@@ -209,7 +203,6 @@ fib:
 	movq %rax, %rcx
 	addq %rbx, %rcx
 	movq %rcx, %rax
-	jmp fib_exit
 fib_exit:
 	leave
 	retq
@@ -264,7 +257,6 @@ main:
 	pushq %rcx
 	call printSignInt
 	addq $8, %rsp
-main_exit:
 	leave
 	retq
 	.global _start
