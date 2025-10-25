@@ -873,36 +873,22 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
     {
         RegId raxId = regAllocator.getRegId("%rax");
         RegId rdxId = regAllocator.getRegId("%rdx");
-        RegId rcxId = regAllocator.getRegId("%rcx");
         bool isRaxFree = regAllocator.isFreeReg(raxId);
         bool isRdxFree = regAllocator.isFreeReg(rdxId);
-        bool isRcxFree = regAllocator.isFreeReg(rcxId);
-        if (code2 == "%rax" || code2 == "%rdx")
+        if (code2 == "%rax" || code2 == "%rdx" || !isRegister(code2) || mov2 != "movq")
         {
             m_ignoreRegs.insert(raxId);
             m_ignoreRegs.insert(rdxId);
             m_ignoreRegs.insert(regAllocator.getRegId(code1));
             RegId regid = getTempReg();
             std::string reg64 = regAllocator.toReg64(regid);
-            asc += "\tmovq " + code2 + ", " + reg64 + "\n"; //  movq {%rax | %rdx}, {reg64}
+            asc += "\t" + mov2 + " " + code2 + ", " + reg64 + "\n";     //  {movq | movabsq | movsbq} {arg2}, {reg64}
             code2 = reg64;
         }
-        if (!isRaxFree)
-        {
-            asc += "\tpushq %rax\n";                        //  pushq %rax
-        }
-        if (!isRdxFree)
-        {
-            asc += "\tpushq %rdx\n";                        //  pushq %rdx
-        }
-        if (!isRcxFree)
-        {
-            asc += "\tpushq %rcx\n";                        //  pushq %rcx
-        }
+        int pushRegPos = asc.length();
         asc += "\t" + mov1 + " " + code1 + ", %rax\n";      //  {movq | movabsq | movsbq} {arg1}, %rax
         asc += "\tcqto\n";                                  //  cqto
-        asc += "\t" + mov2 + " " + code2 + ", %rcx\n";      //  {movq | movabsq | movsbq} {arg2}, %rcx
-        asc += "\tidivq %rcx\n";                            //  idivq %rcx
+        asc += "\tidivq " + code2 + "\n";                   //  idivq {arg2}
         // quotient
         if(op == "/")
         {
@@ -914,41 +900,15 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
             asc += "\tmovq %rdx, " + result_code + "\n";    //  movq %rdx, {result}
         }
         // popq
-        for (int i = 0; i < 3; i ++)
+        if (result_code != "%rax" && !isRaxFree)
         {
-            std::string reg;
-            if (i == 0)
-            {
-                if (isRcxFree)
-                {
-                    continue;
-                }
-                reg = "%rcx";
-            }
-            else if (i == 1)
-            {
-                if (isRdxFree)
-                {
-                    continue;
-                }
-                reg = "%rdx";
-            }
-            else
-            {
-                if (isRaxFree)
-                {
-                    continue;
-                }
-                reg = "%rax";
-            }
-            if (result_code == reg)
-            {
-                asc += "\taddq $8, %rsp\n";                 //  addq $8, %rsp
-            }
-            else
-            {
-                asc += "\tpopq " + reg + "\n";              //  popq {reg}
-            }
+            asc.insert(pushRegPos, "\tpushq %rax\n");       //  push %rax
+            asc += "\tpopq %rax\n";                         //  popq %rax
+        }
+        if (result_code != "%rdx" && !isRdxFree)
+        {
+            asc.insert(pushRegPos, "\tpushq %rdx\n");       //  push %rdx
+            asc += "\tpopq %rdx\n";                         //  popq %rdx
         }
     }
     // addq, subq, imulq

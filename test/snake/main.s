@@ -15,13 +15,10 @@ new_food:
 	subq $1, %rax
 	movq %rax, %rdi
 	pushq %rax
-	pushq %rcx
 	movq %rbx, %rax
 	cqto
-	movq %rdi, %rcx
-	idivq %rcx
+	idivq %rdi
 	movq %rdx, %rcx
-	addq $8, %rsp
 	popq %rax
 	movq %rcx, -8(%rbp)
 	call rand
@@ -31,13 +28,10 @@ new_food:
 	movq Height(%rip), %rcx
 	subq $1, %rcx
 	pushq %rax
-	pushq %rcx
 	movq %rax, %rax
 	cqto
-	movq %rcx, %rcx
 	idivq %rcx
 	movq %rdx, %rbx
-	popq %rcx
 	popq %rax
 	movq %rbx, -16(%rbp)
 	movq -16(%rbp), %rbx
@@ -91,9 +85,9 @@ init:
 	jnz .lable6
 	jmp .lable4
 .lable6:
+	movq $2, %rcx
 	movq Width(%rip), %rax
 	cqto
-	movq $2, %rcx
 	idivq %rcx
 	movq %rax, %rbx
 	movq %rbx, %rcx
@@ -104,13 +98,11 @@ init:
 	movq %rax, %rdx
 	addq %rbx, %rdx
 	movq %rcx, (%rdx)
-	pushq %rdx
+	movq $2, %rcx
 	movq Height(%rip), %rax
 	cqto
-	movq $2, %rcx
 	idivq %rcx
 	movq %rax, %rdx
-	addq $8, %rsp
 	movq -8(%rbp), %rcx
 	imulq $8, %rcx
 	leaq snake_y(%rip), %rax

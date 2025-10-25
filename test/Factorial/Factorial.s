@@ -11,32 +11,24 @@ printPositiveInt:
 	jnz .lable0
 	jmp .lable1
 .lable0:
+	movq $10, %rdi
 	pushq %rax
-	pushq %rdx
-	pushq %rcx
 	movq -8(%rbp), %rax
 	cqto
-	movq $10, %rcx
-	idivq %rcx
+	idivq %rdi
 	movq %rax, %rax
-	popq %rcx
-	popq %rdx
 	addq $8, %rsp
 	pushq %rax
 	pushq %rax
 	call printPositiveInt
 	addq $8, %rsp
 	popq %rax
+	movq $10, %rdi
 	pushq %rax
-	pushq %rdx
-	pushq %rcx
 	movq -8(%rbp), %rax
 	cqto
-	movq $10, %rcx
-	idivq %rcx
+	idivq %rdi
 	movq %rdx, %rax
-	popq %rcx
-	popq %rdx
 	addq $8, %rsp
 	movq %rax, %rbx
 	addq $48, %rbx
