@@ -166,7 +166,7 @@ void ASGenerator::dec_extern_var(const std::string &var_name, const std::string 
 
 void ASGenerator::dec_string(const std::string &str_name, const std::string &string)
 {
-    asc += "\t.data\n";                     //      .data
+    asc += "\t.section .rodata\n";          //      .section .rodata
     asc += str_name + ":\n";                // {str_name}:
     asc += "\t.string " + string + "\n";    //      {.string} {string}
     symTable.insert(std::pair<std::string, VarSymbol>(str_name, VarSymbol(str_name + "(%rip)", "arr_char")));    // {str_name} : {str_name}(%rip)

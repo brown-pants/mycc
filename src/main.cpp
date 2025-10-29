@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        TACOptimizer tacOptimizer;
-        tacOptimizer.opt(tac);
+        TACOptimizer tacOptimizer(tac);
+        tacOptimizer.opt();
 
         Debug::PrintTAC(tac);
 

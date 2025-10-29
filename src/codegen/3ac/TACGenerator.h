@@ -50,6 +50,10 @@ public:
         std::string arg1;
         std::string arg2;
         std::string result;
+        bool operator<(const TACGenerator::Quaternion &other) const
+        {
+            return std::tie(this->op, this->arg1, this->arg2, this->result) < std::tie(other.op, other.arg1, other.arg2, other.result);
+        }
     };
 
     TACGenerator(const Parser::TreeNode &root);

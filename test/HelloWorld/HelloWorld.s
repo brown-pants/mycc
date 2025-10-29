@@ -1,4 +1,4 @@
-	.data
+	.section .rodata
 .str0:
 	.string "Hello World"
 	.global arr

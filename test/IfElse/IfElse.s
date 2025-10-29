@@ -1,49 +1,49 @@
-	.data
+	.section .rodata
 .str15:
 	.string "n == ? m == ?"
-	.data
+	.section .rodata
 .str14:
 	.string "n == ? m == 3"
-	.data
+	.section .rodata
 .str13:
 	.string "n == ? m == 2"
-	.data
+	.section .rodata
 .str12:
 	.string "n == ? m == 1"
-	.data
+	.section .rodata
 .str11:
 	.string "n == 3 m == ?"
-	.data
+	.section .rodata
 .str10:
 	.string "n == 3 m == 3"
-	.data
+	.section .rodata
 .str9:
 	.string "n == 3 m == 2"
-	.data
+	.section .rodata
 .str8:
 	.string "n == 3 m == 1"
-	.data
+	.section .rodata
 .str7:
 	.string "n == 2 m == ?"
-	.data
+	.section .rodata
 .str6:
 	.string "n == 2 m == 3"
-	.data
+	.section .rodata
 .str5:
 	.string "n == 2 m == 2"
-	.data
+	.section .rodata
 .str4:
 	.string "n == 2 m == 1"
-	.data
+	.section .rodata
 .str3:
 	.string "n == 1 m == ?"
-	.data
+	.section .rodata
 .str2:
 	.string "n == 1 m == 3"
-	.data
+	.section .rodata
 .str1:
 	.string "n == 1 m == 2"
-	.data
+	.section .rodata
 .str0:
 	.string "n == 1 m == 1"
 	.global func
