@@ -204,7 +204,7 @@ void TACOptimizer::cse()
         cse_area(block);
     }
     int offset = 0;
-    for (auto idx : m_validTacIndices)
+    for (auto idx : m_invalidTacIndices)
     {
         tac.erase(tac.begin() + idx - offset ++);
     }
@@ -274,7 +274,7 @@ void TACOptimizer::cse_area(Block *block)
         {
             if (subExprTest(_IN, code))
             {
-                m_validTacIndices.insert(tac_index);
+                m_invalidTacIndices.insert(tac_index);
             }
             else
             {
@@ -288,7 +288,7 @@ void TACOptimizer::cse_area(Block *block)
         }
         else if (subExprTest(_IN, code))
         {
-            m_validTacIndices.insert(tac_index);
+            m_invalidTacIndices.insert(tac_index);
         }
         else
         {

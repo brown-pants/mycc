@@ -34,7 +34,7 @@ private:
     std::unordered_map<std::string, std::string> m_ptrRecords;
     std::unordered_map<std::string, std::string> m_replaceVars;
     std::unordered_set<Block *> m_visitedBlocks;
-    std::set<int> m_validTacIndices;
+    std::set<int> m_invalidTacIndices;
     void cse();   //  Common Subexpression Elimination
     void cse_area(Block *block);
     bool subExprTest(const std::set<TACGenerator::Quaternion> &_in, const TACGenerator::Quaternion &expr);
