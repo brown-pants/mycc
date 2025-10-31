@@ -272,6 +272,14 @@ void TACOptimizer::cse_area(Block *block)
                 {
                     m_ptrRecords[code.result] = iter->second;
                 }
+                else
+                {
+                    auto iter = m_ptrRecords.find(code.result);
+                    if (iter != m_ptrRecords.end())
+                    {
+                        m_ptrRecords.erase(iter);
+                    }
+                }
                 kill(_IN, code.result);
             }
         }
