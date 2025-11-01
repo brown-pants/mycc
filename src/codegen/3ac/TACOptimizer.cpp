@@ -1,5 +1,6 @@
 #include "TACOptimizer.h"
 #include <algorithm>
+#include <ctype.h>
 
 TACOptimizer::TACOptimizer(std::vector<TACGenerator::Quaternion> &tac)
     : tac(tac)
@@ -217,7 +218,6 @@ void TACOptimizer::cse_area(Block *block)
         return;
     }
     m_visitedBlocks.insert(block);
-    std::unordered_set<std::string> m_KILL;
     std::set<TACGenerator::Quaternion> _IN;
     bool first = true;
     for (Block *pre : block->prevs)
@@ -245,11 +245,15 @@ void TACOptimizer::cse_area(Block *block)
     for (int tac_index : block->tac_indices)
     {
         TACGenerator::Quaternion &code = tac[tac_index];
-        if (code.op == TACGenerator::Op_local_var || code.op == TACGenerator::Op_dec_param || code.op == TACGenerator::Op_param || code.op == TACGenerator::Op_label)
+        if (code.op == TACGenerator::Op_local_var || code.op == TACGenerator::Op_dec_param || code.op == TACGenerator::Op_label)
         {
             continue;
         }
         replaceVars(code);
+        if (code.op == TACGenerator::Op_param)
+        {
+            continue;
+        }
         if (code.op == TACGenerator::Op_assign)
         {
             if (code.result[0] == '*')
@@ -262,7 +266,7 @@ void TACOptimizer::cse_area(Block *block)
                 }
                 else
                 {
-                    _IN.clear();
+                    killExceptConstant(_IN);
                 }
             }
             else
@@ -297,7 +301,7 @@ void TACOptimizer::cse_area(Block *block)
         }
         else if (code.op == TACGenerator::Op_call_func)
         {
-            _IN.clear();
+            killExceptConstant(_IN);
         }
         else if (subExprTest(_IN, code))
         {
@@ -338,6 +342,14 @@ void TACOptimizer::replaceVars(TACGenerator::Quaternion &code)
             code.result = "*" + iter->second;
         }
     }
+    else if (code.op == TACGenerator::Op_param)
+    {
+        auto iter = m_replaceVars.find(code.result);
+        if (iter != m_replaceVars.end())
+        {
+            code.result = iter->second;
+        }
+    }
     auto iter = m_replaceVars.find(code.arg1);
     if (iter != m_replaceVars.end())
     {
@@ -355,7 +367,7 @@ void TACOptimizer::kill(std::set<TACGenerator::Quaternion> &_in, const std::stri
     for (auto iter = _in.begin(); iter != _in.end(); )
     {
         const TACGenerator::Quaternion &code = *iter;
-        if (code.arg1 == var || code.arg2 == var)
+        if (code.op != TACGenerator::Op_address && (code.arg1 == var || code.arg2 == var))
         {
             iter = _in.erase(iter);
         }
@@ -363,5 +375,37 @@ void TACOptimizer::kill(std::set<TACGenerator::Quaternion> &_in, const std::stri
         {
             iter ++;
         }
+    }
+}
+
+void TACOptimizer::killExceptConstant(std::set<TACGenerator::Quaternion> &_in)
+{
+    auto isConstant = [_in](const std::string &var)
+    {
+        if (var[0] == '-' || std::isdigit(var[0]) || var == "")
+        {
+            return true;
+        }
+        for (auto iter = _in.begin(); iter != _in.end(); iter ++)
+        {
+            if (iter->result == var && iter->op == TACGenerator::Op_address)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    for (auto iter = _in.begin(); iter != _in.end(); )
+    {
+        if (iter->op != TACGenerator::Op_address)
+        {
+            if (!isConstant(iter->arg1) && !isConstant(iter->arg2))
+            {
+                iter = _in.erase(iter);
+                continue;
+            }
+        }
+        iter ++;
     }
 }

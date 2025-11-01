@@ -764,30 +764,30 @@ void Parser::initTable()
     ASTable[mulop][Token::Mod]                                   = { Item{Token::Mod, Vt} };     // %        ->      { % }
 
     /*<factor>:
-          (        ->      { ( <expression> ) }
+          (        ->      { ( <expression> ) <factor_tail> }
           *        ->      { * <factor> }
           !        ->      { ! <factor> }
           -        ->      { - <factor> }
           &        ->      { & <factor> }
-          id       ->      { id <id_tail> }
-          num      ->      { num }
+          id       ->      { id <factor_tail> }
+          num      ->      { num <factor_tail> }
     */
-    ASTable[factor][Token::OpenParen]                            = { Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt} }; // (        ->      { ( <expression> ) }   
-    ASTable[factor][Token::Mult]                                 = { Item{Token::Mult, Vt}, Item{factor, Vn} };                                       // *        ->      { * <factor> }
-    ASTable[factor][Token::Not]                                  = { Item{Token::Not, Vt}, Item{factor, Vn} };                                        // !        ->      { ! <factor> }
-    ASTable[factor][Token::Minus]                                = { Item{Token::Minus, Vt}, Item{factor, Vn} };                                      // -        ->      { - <factor> }
-    ASTable[factor][Token::Ampersand]                            = { Item{Token::Ampersand, Vt}, Item{factor, Vn} };                                  // &        ->      { & <factor> }
-    ASTable[factor][Token::Identifier]                           = { Item{Token::Identifier, Vt}, Item{id_tail, Vn} };                                // id       ->      { id <id_tail> }
-    ASTable[factor][Token::Integer]                              = { Item{Token::Integer, Vt} };                                                      // num      ->      { num }
+    ASTable[factor][Token::OpenParen]                            = { Item{Token::OpenParen, Vt}, Item{expression, Vn}, Item{Token::CloseParen, Vt}, Item{factor_tail, Vn} };  // (        ->      { ( <expression> ) <factor_tail> }
+    ASTable[factor][Token::Mult]                                 = { Item{Token::Mult, Vt}, Item{factor, Vn} };                                                               // *        ->      { * <factor> }
+    ASTable[factor][Token::Not]                                  = { Item{Token::Not, Vt}, Item{factor, Vn} };                                                                // !        ->      { ! <factor> }
+    ASTable[factor][Token::Minus]                                = { Item{Token::Minus, Vt}, Item{factor, Vn} };                                                              // -        ->      { - <factor> }
+    ASTable[factor][Token::Ampersand]                            = { Item{Token::Ampersand, Vt}, Item{factor, Vn} };                                                          // &        ->      { & <factor> }
+    ASTable[factor][Token::Identifier]                           = { Item{Token::Identifier, Vt}, Item{factor_tail, Vn} };                                                    // id       ->      { id <factor_tail> }
+    ASTable[factor][Token::String]                               = { Item{Token::String, Vt}, Item{factor_tail, Vn} };                                                        // num      ->      { num <factor_tail> }
+    ASTable[factor][Token::Integer]                              = { Item{Token::Integer, Vt} };
     ASTable[factor][Token::Character]                            = { Item{Token::Character, Vt} };
     ASTable[factor][Token::Float]                                = { Item{Token::Float, Vt} };
-    ASTable[factor][Token::String]                               = { Item{Token::String, Vt} };
     
-    /*<id_tail>:
+    /*<factor_tail>:
           ;        ->      { ~ }
-          [        ->      { [ <expression> ] }
+          [        ->      { [ <expression> ] <factor_tail> }
           ]        ->      { ~ }
-          (        ->      { ( <args> ) }
+          (        ->      { ( <args> ) <factor_tail> }
           )        ->      { ~ }
           ,        ->      { ~ }
           =        ->      { ~ }
@@ -805,26 +805,26 @@ void Parser::initTable()
           ||       ->      { ~ }
           &&       ->      { ~ }
     */
-    ASTable[id_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                                // ;        ->      { ~ }
-    ASTable[id_tail][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt} };     // [        ->      { [ <expression> ] }
-    ASTable[id_tail][Token::CloseSquare]                         = { Item{Token::Nul, Vt} };                                                                // ]        ->      { ~ }
-    ASTable[id_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt} };             // (        ->      { ( <args> ) }
-    ASTable[id_tail][Token::CloseParen]                          = { Item{Token::Nul, Vt} };                                                                // )        ->      { ~ }
-    ASTable[id_tail][Token::Comma]                               = { Item{Token::Nul, Vt} };                                                                // ,        ->      { ~ }
-    ASTable[id_tail][Token::Eq]                                  = { Item{Token::Nul, Vt} };                                                                // =        ->      { ~ }
-    ASTable[id_tail][Token::Less_Eq]                             = { Item{Token::Nul, Vt} };                                                                // <=       ->      { ~ }
-    ASTable[id_tail][Token::Less]                                = { Item{Token::Nul, Vt} };                                                                // <        ->      { ~ }
-    ASTable[id_tail][Token::Greater]                             = { Item{Token::Nul, Vt} };                                                                // >        ->      { ~ }
-    ASTable[id_tail][Token::Greater_Eq]                          = { Item{Token::Nul, Vt} };                                                                // >=       ->      { ~ }
-    ASTable[id_tail][Token::Eq_Eq]                               = { Item{Token::Nul, Vt} };                                                                // ==       ->      { ~ }
-    ASTable[id_tail][Token::Not_Eq]                              = { Item{Token::Nul, Vt} };                                                                // !=       ->      { ~ }
-    ASTable[id_tail][Token::Plus]                                = { Item{Token::Nul, Vt} };                                                                // +        ->      { ~ }
-    ASTable[id_tail][Token::Minus]                               = { Item{Token::Nul, Vt} };                                                                // -        ->      { ~ }
-    ASTable[id_tail][Token::Mult]                                = { Item{Token::Nul, Vt} };                                                                // *        ->      { ~ }
-    ASTable[id_tail][Token::Div]                                 = { Item{Token::Nul, Vt} };                                                                // /        ->      { ~ }
-    ASTable[id_tail][Token::Mod]                                 = { Item{Token::Nul, Vt} };                                                                // %        ->      { ~ }
-    ASTable[id_tail][Token::Or]                                  = { Item{Token::Nul, Vt} };                                                                // ||       ->      { ~ }
-    ASTable[id_tail][Token::And]                                 = { Item{Token::Nul, Vt} };                                                                // &&       ->      { ~ }
+    ASTable[factor_tail][Token::Semicolon]                           = { Item{Token::Nul, Vt} };                                                                                          // ;        ->      { ~ }
+    ASTable[factor_tail][Token::OpenSquare]                          = { Item{Token::OpenSquare, Vt}, Item{expression, Vn}, Item{Token::CloseSquare, Vt}, Item{factor_tail, Vn} };        // [        ->      { [ <expression> ] <factor_tail> }
+    ASTable[factor_tail][Token::CloseSquare]                         = { Item{Token::Nul, Vt} };                                                                                          // ]        ->      { ~ }
+    ASTable[factor_tail][Token::OpenParen]                           = { Item{Token::OpenParen, Vt}, Item{args, Vn}, Item{Token::CloseParen, Vt}, Item{factor_tail, Vn} };                // (        ->      { ( <args> ) <factor_tail> }
+    ASTable[factor_tail][Token::CloseParen]                          = { Item{Token::Nul, Vt} };                                                                                          // )        ->      { ~ }
+    ASTable[factor_tail][Token::Comma]                               = { Item{Token::Nul, Vt} };                                                                                          // ,        ->      { ~ }
+    ASTable[factor_tail][Token::Eq]                                  = { Item{Token::Nul, Vt} };                                                                                          // =        ->      { ~ }
+    ASTable[factor_tail][Token::Less_Eq]                             = { Item{Token::Nul, Vt} };                                                                                          // <=       ->      { ~ }
+    ASTable[factor_tail][Token::Less]                                = { Item{Token::Nul, Vt} };                                                                                          // <        ->      { ~ }
+    ASTable[factor_tail][Token::Greater]                             = { Item{Token::Nul, Vt} };                                                                                          // >        ->      { ~ }
+    ASTable[factor_tail][Token::Greater_Eq]                          = { Item{Token::Nul, Vt} };                                                                                          // >=       ->      { ~ }
+    ASTable[factor_tail][Token::Eq_Eq]                               = { Item{Token::Nul, Vt} };                                                                                          // ==       ->      { ~ }
+    ASTable[factor_tail][Token::Not_Eq]                              = { Item{Token::Nul, Vt} };                                                                                          // !=       ->      { ~ }
+    ASTable[factor_tail][Token::Plus]                                = { Item{Token::Nul, Vt} };                                                                                          // +        ->      { ~ }
+    ASTable[factor_tail][Token::Minus]                               = { Item{Token::Nul, Vt} };                                                                                          // -        ->      { ~ }
+    ASTable[factor_tail][Token::Mult]                                = { Item{Token::Nul, Vt} };                                                                                          // *        ->      { ~ }
+    ASTable[factor_tail][Token::Div]                                 = { Item{Token::Nul, Vt} };                                                                                          // /        ->      { ~ }
+    ASTable[factor_tail][Token::Mod]                                 = { Item{Token::Nul, Vt} };                                                                                          // %        ->      { ~ }
+    ASTable[factor_tail][Token::Or]                                  = { Item{Token::Nul, Vt} };                                                                                          // ||       ->      { ~ }
+    ASTable[factor_tail][Token::And]                                 = { Item{Token::Nul, Vt} };                                                                                          // &&       ->      { ~ }
 
     /*<args>:
           !        ->      { <expression> <arg_tail> }

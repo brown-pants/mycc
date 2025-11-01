@@ -101,14 +101,14 @@ void Debug::VarUndefined(const Token &token)
     std::cout << token.file() << ":" << token.line() << ": " << red << "error: " << white << "undefined variable " << red << token.lexeme() << white << std::endl;
 }
 
-void Debug::NotArray(const Token &token)
+void Debug::NotArrayOrPtr(const Token &token)
 {
-    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a array" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << " subscripted value is neither array nor pointer" << std::endl;
 }
 
 void Debug::NotFunction(const Token &token)
 {
-    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << red << token.lexeme() << white << " is not a function" << white << std::endl;
+    std::cout << token.file() << ":" << token.line() << ": " << red << "error: "  << white << "called object is not a function" << std::endl;
 }
 
 void Debug::NotNormalVar(const Token &token)

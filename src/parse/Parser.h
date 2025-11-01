@@ -50,8 +50,8 @@ public:
         term,                       //  <term>                      -> <factor> <term_tail>
         term_tail,                  //  <term_tail>                 -> <mulop> <factor> <term_tail> | ~
         mulop,                      //  <mulop>                     -> * | /
-        factor,                     //  <factor>                    -> ( <expression> ) | id <id_tail> | & <factor> | * <factor> | ! <factor> | - <factor> | num
-        id_tail,                    //  <id_tail>                   -> ( <args> ) | [ <expression> ] | ~
+        factor,                     //  <factor>                    -> ( <expression> ) <factor_tail> | & <factor> | * <factor> | ! <factor> | - <factor> | id <factor_tail> | num <factor_tail>
+        factor_tail,                //  <factor_tail>               -> ( <args> ) <factor_tail> | [ <expression> ] <factor_tail> | ~
         args,                       //  <args>                      -> <expression> <arg_tail> | ~
         arg_tail,                   //  <arg_tail>                  -> , <expression> <arg_tail> | ~
     };

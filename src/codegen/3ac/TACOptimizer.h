@@ -40,6 +40,7 @@ private:
     bool subExprTest(const std::set<TACGenerator::Quaternion> &_in, const TACGenerator::Quaternion &expr);
     void replaceVars(TACGenerator::Quaternion &code);
     void kill(std::set<TACGenerator::Quaternion> &_in, const std::string &var);
+    void killExceptConstant(std::set<TACGenerator::Quaternion> &_in);
 };
 
 #endif

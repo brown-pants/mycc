@@ -22,7 +22,7 @@ public:
     static void TypeError(const Token &token);
     static void VarUndefined(const Token &token);
     static void ArrayUndefined(const Token &token);
-    static void NotArray(const Token &token);
+    static void NotArrayOrPtr(const Token &token);
     static void NotFunction(const Token &token);
     static void NotNormalVar(const Token &token);
     static void ParamsError(const Token &token, const std::string &str);

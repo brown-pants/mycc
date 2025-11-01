@@ -93,7 +93,7 @@ private:
     void dec_params(const Parser::TreeNode &node, std::vector<Token::Type> &params_type, bool defineParams = true);
     std::string constant_additive(OpType op, const std::string &arg1, const std::string &arg2);
     std::string do_expression(const Parser::TreeNode &node);
-    std::string do_id_tail(const Parser::TreeNode &id_tail, const Token &id);
+    std::string do_factor_tail(const Parser::TreeNode &factor_tail, const std::string &var, const Token &func_token = Token());
     int passing_params(const Parser::TreeNode &node);
     
     bool isNumber(const std::string &str) const;

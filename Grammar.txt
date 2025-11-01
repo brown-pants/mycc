@@ -158,23 +158,23 @@
 <mulop> -> /
 <mulop> -> %
 
-# 因子： ( 表达式 ) 或 变量 或 函数调用 或 数组取值 或 变量取址 或 指针取值 或 取否 或 取反 或 常量
-<factor> -> ( <expression> )
-<factor> -> id <id_tail>
+# 因子： 括号表达式 或 取址 或 取值 或 取否 或 取反 或 函数调用 或 下标取值
+<factor> -> ( <expression> ) <factor_tail>
 <factor> -> & <factor>
 <factor> -> * <factor>
 <factor> -> ! <factor>
 <factor> -> - <factor>
-<factor> -> num
+<factor> -> id <factor_tail>
+<factor> -> num <factor_tail>
 
-# 标识符尾： ( 传参列表 )   用于函数调用
-<id_tail> -> ( <args> )
+# 因子尾： ( 传参列表 ) 因子尾
+<factor_tail> -> ( <args> ) <factor_tail>
 
-# 标识符尾： 用于数组取值或赋值
-<id_tail> -> [ <expression> ]
+# 因子尾： [ 表达式 ] 因子尾
+<factor_tail> -> [ <expression> ] <factor_tail>
 
-# 标识符尾： 空           用于普通变量取值
-<id_tail> -> ~
+# 因子尾： 空
+<factor_tail> -> ~
 
 # 传参列表： 表达式 传参尾 或 空
 <args> -> <expression> <arg_tail>
