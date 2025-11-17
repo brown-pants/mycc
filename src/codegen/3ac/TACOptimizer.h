@@ -29,8 +29,10 @@ private:
     std::unordered_map<std::string, std::vector<Block *>> m_jumpBlocks;
     Block *curBlock;
     void genCFG();
+    std::unordered_map<std::string, long long> m_globlArr;
 
     std::unordered_map<Block *, std::set<TACGenerator::Quaternion>> m_OUT;
+    std::unordered_map<std::string, long long> m_arrays;
     std::unordered_map<std::string, std::string> m_ptrRecords;
     std::unordered_map<std::string, std::string> m_replaceVars;
     std::unordered_set<Block *> m_visitedBlocks;
