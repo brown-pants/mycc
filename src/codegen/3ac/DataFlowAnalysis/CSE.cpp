@@ -211,7 +211,7 @@ void CSE::computeGenKill(const std::vector<Block::ptr_t> &depthOrderBlocks)
         for (int tac_index : block->tac_indices)
         {
             const TACGenerator::Quaternion &code = tac[tac_index];
-            if (code.op == TACGenerator::Op_local_var || code.op == TACGenerator::Op_dec_param || code.op == TACGenerator::Op_param || code.op == TACGenerator::Op_label)
+            if (code.op == TACGenerator::Op_local_var || code.op == TACGenerator::Op_dec_param || code.op == TACGenerator::Op_param || code.op == TACGenerator::Op_label || code.op == TACGenerator::Op_if)
             {
                 continue;
             }

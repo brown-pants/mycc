@@ -290,14 +290,14 @@ std::set<std::string> LiveVariableAnalyzer::getUse(const TACGenerator::Quaternio
         case TACGenerator::Op_greater_eq:
         case TACGenerator::Op_less:
         case TACGenerator::Op_less_eq:
-            if(analyzable(code.arg1))
-            {
-                use.insert(code.arg1);
-            }
-            if(analyzable(code.arg2))
-            {
-                use.insert(code.arg2);
-            }
+        if(analyzable(code.arg1))
+        {
+            use.insert(code.arg1);
+        }
+        if(analyzable(code.arg2))
+        {
+            use.insert(code.arg2);
+        }
     }
     if (code.op == TACGenerator::Op_param && analyzable(code.result))
     {
