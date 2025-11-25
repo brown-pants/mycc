@@ -216,8 +216,8 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
                 if (isPointer)
                 {
                     // Sorry, pointer arrays are not currently supported.
-                    m_hasError = true;
                     Debug::NotSupportedPointerArray(id);
+                    m_hasError = true;
                 }
                 else
                 {
@@ -231,13 +231,13 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             else if (isPointer)
             {
                 // Sorry, pointer arrays are not currently supported.
-                m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
+                m_hasError = true;
             }
             // dec arr
             dec_var(false, type, id, "", "arr", size);
         }
-        /* ( <params> ) <func_tail> */
+        /* <dec_tail> -> ( <params> ) <func_tail> */
         else if (dec_tail.tokens[0].type() == Token::OpenParen)
         {
             if (type.type() == Token::Void && isPointer)
@@ -317,8 +317,8 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
             if (isPointer)
             {
                 // Sorry, pointer arrays are not currently supported.
-                m_hasError = true;
                 Debug::NotSupportedPointerArray(id);
+                m_hasError = true;
             }
             dec_var(true, type, id, "", "arr", std::stoll(num));
         }
@@ -434,14 +434,8 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         code.push_back({ Op_goto, "", "", label1 });            // goto L1
         code.push_back({ Op_label, "", "", label3 });           // L3:
         // clear jump stack
-        if (!breakStack.empty() && breakStack.top() == label3)
-        {
-            breakStack.pop();
-        }
-        if (!continueStack.empty() && (is_for && continueStack.top() == label4 || !is_for && continueStack.top() == label1))
-        {
-            continueStack.pop();
-        }
+        breakStack.pop();
+        continueStack.pop();
         break;
     }
     /* <return_stmt> -> return <return_tail> ; */
@@ -472,7 +466,6 @@ void TACGenerator::generate_3ac(const Parser::TreeNode &node)
         else
         {
             std::string jmp_label = _stack.top();
-            _stack.pop();
             code.push_back({ Op_goto, "", "", jmp_label });
         }
         break;
@@ -1386,6 +1379,7 @@ std::string TACGenerator::do_expression(const Parser::TreeNode &node)
             if (sym == nullptr)
             {
                 Debug::VarUndefined(id);
+                m_hasError = true;
                 return "";
             }
             if (sym->type == Symbol::Arr)

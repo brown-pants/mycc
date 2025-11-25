@@ -1,8 +1,8 @@
 #include "ASGenerator.h"
 #include <limits>
 
-ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac)
-    : regAllocator(tac), tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0), has_main(false), save_reg_pos(-1), call_func_end_pos(0)
+ASGenerator::ASGenerator(const std::vector<TACGenerator::Quaternion> &tac, const std::map<std::string, Interval, VarNameCompare> &liveIntervals)
+    : regAllocator(liveIntervals), tac(tac), mOffset(0), paramOffset(8), sub_rsp_pos(0), has_main(false), save_reg_pos(-1), call_func_end_pos(0)
 {
     regAllocator.exec();
 }
@@ -12,10 +12,6 @@ std::string ASGenerator::exec()
     for (int idx = 0; idx < tac.size(); idx ++)
     {
         const TACGenerator::Quaternion &code = tac[idx];
-        if (regAllocator.isInvalidVar(code.result))
-        {
-            continue;
-        }
         switch(code.op)
         {
         case TACGenerator::Op_global_init:
@@ -369,7 +365,14 @@ void ASGenerator::assign(const std::string &arg, const std::string &result)
 
     if (arg == "~ret")
     {
-        asc.insert(call_func_end_pos, "\tmovq %rax, " + result_code + "\n");
+        if (isOneByteType(arg))
+        {
+            asc.insert(call_func_end_pos, "\tmovsbq %al, " + result_code + "\n");
+        }
+        else
+        {
+            asc.insert(call_func_end_pos, "\tmovq %rax, " + result_code + "\n");
+        }
         return;
     }
     

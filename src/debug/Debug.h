@@ -36,7 +36,7 @@ public:
 
     static void PrintTokens(const std::vector<Token> &tokens);
     static void PrintTAC(const std::vector<TACGenerator::Quaternion> &tac);
-    static void PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAllocator::Interval, RegAllocator::VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs);
+    static void PrintLiveIntervalsAndRegAlloc(const std::map<std::string, Interval, VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs);
 
 private:
     Debug();

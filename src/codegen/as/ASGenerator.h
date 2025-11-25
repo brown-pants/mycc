@@ -8,7 +8,7 @@
 class ASGenerator
 {
 public:
-    ASGenerator(const std::vector<TACGenerator::Quaternion> &tac);
+    ASGenerator(const std::vector<TACGenerator::Quaternion> &tac, const std::map<std::string, Interval, VarNameCompare> &liveIntervals);
     std::string exec();
 
 private:

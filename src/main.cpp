@@ -5,6 +5,7 @@
 #include "parse/Parser.h"
 #include "codegen/3ac/TACGenerator.h"
 #include "codegen/3ac/TACOptimizer.h"
+#include "codegen/3ac/DataFlowAnalysis/LiveVariableAnalyzer.h"
 #include "codegen/as/ASGenerator.h"
 #include "symtab/SymbolTable.h"
 #include <stdlib.h>
@@ -98,9 +99,12 @@ int main(int argc, char *argv[])
         TACOptimizer tacOptimizer(tac);
         tacOptimizer.opt();
 
+        LiveVariableAnalyzer avar(tac);
+        avar.opt();
+
         Debug::PrintTAC(tac);
 
-        ASGenerator asGenerator(tac);
+        ASGenerator asGenerator(tac, avar.result());
         std::string asc = asGenerator.exec();
 
         Util::WriteFile(f_name + ".s", asc);

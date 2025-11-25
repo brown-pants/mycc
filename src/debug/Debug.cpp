@@ -266,9 +266,10 @@ void Debug::PrintTAC(const std::vector<TACGenerator::Quaternion> &tac)
     }
 }
 
-void Debug::PrintActiveIntervalsAndRegAlloc(const std::map<std::string, RegAllocator::Interval, RegAllocator::VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs)
+
+void Debug::PrintLiveIntervalsAndRegAlloc(const std::map<std::string, Interval, VarNameCompare> &intervals, const std::map<std::string, RegAllocator::RegId> &regs)
 {
-    std::cout << std::endl << green <<"Active Intervals & Register Allocation:" << std::endl << std::endl << white;
+    std::cout << std::endl << green <<"Live Intervals & Register Allocation:" << std::endl << std::endl << white;
     for (auto iter : intervals)
     {
         std::string reg = "~";

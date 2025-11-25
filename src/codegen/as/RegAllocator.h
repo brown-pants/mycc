@@ -2,6 +2,7 @@
 #define __REGALLOCATOR_H__
 
 #include "../3ac/TACGenerator.h"
+#include "../3ac/DataFlowAnalysis/LiveVariableAnalyzer.h"
 #include <map>
 
 class RegAllocator
@@ -19,18 +20,7 @@ public:
         Nul
     };
 
-    struct Interval
-    {
-        int begin;
-        int end;
-    };
-
-    struct VarNameCompare
-    {
-        bool operator()(const std::string& v1, const std::string& v2) const;
-    };
-
-    RegAllocator(const std::vector<TACGenerator::Quaternion> &tac);
+    RegAllocator(const std::map<std::string, Interval, VarNameCompare> &liveIntervals);
     void exec();
 
     inline std::string toReg64(RegId reg) const { return Reg64[reg]; }
@@ -42,7 +32,6 @@ public:
     bool isFreeReg(RegId reg);
     std::vector<RegId> freeVarRegs(int idx);
     RegId getRegId(const std::string &regStr);
-    bool isInvalidVar(const std::string &var);
 
 private:
     std::unordered_set<RegId> m_regPool
@@ -72,12 +61,9 @@ private:
         "%sil",
         "%dil",
     };
-    const std::vector<TACGenerator::Quaternion> &tac;
-    std::map<std::string, Interval, VarNameCompare> m_activeIntervals;
+    const std::map<std::string, Interval, VarNameCompare> &m_liveIntervals;
     std::map<std::string, RegId> m_varRegs;
     std::map<int, std::vector<RegId>> m_regEnds;
-    bool isTempVar(const std::string &var) const;
-    bool hasTempVar(const std::string &var, std::string &temp_name) const;
 };
 
 #endif

@@ -396,28 +396,28 @@ update:
 	leaq snake_x(%rip), %rcx
 	movq -8(%rbp), %rbx
 	subq $1, %rbx
-	movq %rbx, %rdx
-	imulq $8, %rdx
+	movq %rbx, %rax
+	imulq $8, %rax
 	movq %rcx, %rbx
-	addq %rdx, %rbx
-	movq -8(%rbp), %rdx
-	imulq $8, %rdx
-	movq %rcx, %rax
-	addq %rdx, %rax
-	movq (%rbx), %rdx
-	movq %rdx, (%rax)
-	leaq snake_y(%rip), %rdx
+	addq %rax, %rbx
 	movq -8(%rbp), %rax
-	subq $1, %rax
-	movq %rax, %rbx
+	imulq $8, %rax
+	movq %rcx, %rsi
+	addq %rax, %rsi
+	movq (%rbx), %rax
+	movq %rax, (%rsi)
+	leaq snake_y(%rip), %rax
+	movq -8(%rbp), %rsi
+	subq $1, %rsi
+	movq %rsi, %rbx
 	imulq $8, %rbx
-	movq %rdx, %rax
-	addq %rbx, %rax
+	movq %rax, %rsi
+	addq %rbx, %rsi
 	movq -8(%rbp), %rbx
 	imulq $8, %rbx
-	movq %rdx, %rcx
+	movq %rax, %rcx
 	addq %rbx, %rcx
-	movq (%rax), %rbx
+	movq (%rsi), %rbx
 	movq %rbx, (%rcx)
 	movq -8(%rbp), %rbx
 	subq $1, %rbx
@@ -434,24 +434,24 @@ update:
 .lable43:
 	leaq snake_x(%rip), %rbx
 	movq (%rbx), %rcx
-	movq %rcx, %rax
-	subq $1, %rax
-	movq %rax, (%rbx)
+	movq %rcx, %rsi
+	subq $1, %rsi
+	movq %rsi, (%rbx)
 	jmp .lable51
 .lable44:
-	movq dir(%rip), %rax
-	cmpq $1, %rax
-	sete %al
-	movzbq %al, %rax
-	testq %rax, %rax
+	movq dir(%rip), %rsi
+	cmpq $1, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable46
 	jmp .lable47
 .lable46:
-	leaq snake_x(%rip), %rax
-	movq (%rax), %rbx
+	leaq snake_x(%rip), %rsi
+	movq (%rsi), %rbx
 	movq %rbx, %rcx
 	addq $1, %rcx
-	movq %rcx, (%rax)
+	movq %rcx, (%rsi)
 	jmp .lable51
 .lable47:
 	movq dir(%rip), %rcx
@@ -463,92 +463,89 @@ update:
 	jmp .lable50
 .lable49:
 	leaq snake_y(%rip), %rcx
-	movq (%rcx), %rax
-	movq %rax, %rbx
+	movq (%rcx), %rsi
+	movq %rsi, %rbx
 	subq $1, %rbx
 	movq %rbx, (%rcx)
 	jmp .lable51
 .lable50:
 	leaq snake_y(%rip), %rbx
 	movq (%rbx), %rcx
-	movq %rcx, %rax
-	addq $1, %rax
-	movq %rax, (%rbx)
+	movq %rcx, %rsi
+	addq $1, %rsi
+	movq %rsi, (%rbx)
 .lable51:
-	leaq snake_x(%rip), %rax
-	movq (%rax), %rbx
+	leaq snake_x(%rip), %rsi
+	movq (%rsi), %rbx
 	movq %rbx, -32(%rbp)
 	leaq snake_y(%rip), %rbx
-	movq (%rbx), %rax
-	movq %rax, -40(%rbp)
-	leaq Map(%rip), %rax
-	movq -40(%rbp), %rbx
-	imulq Width(%rip), %rbx
-	movq %rbx, %rcx
-	addq -32(%rbp), %rcx
-	movq %rcx, %rbx
-	imulq $1, %rbx
-	movq %rax, %rcx
-	addq %rbx, %rcx
-	movq %rcx, -48(%rbp)
-	movq -48(%rbp), %rbx
-	movzbq (%rbx), %rcx
-	movq %rcx, %rbx
-	cmpq $35, %rbx
-	sete %bl
-	movzbq %bl, %rbx
-	testq %rbx, %rbx
+	movq (%rbx), %rsi
+	movq %rsi, -40(%rbp)
+	movq -40(%rbp), %rsi
+	imulq Width(%rip), %rsi
+	movq %rsi, %rbx
+	addq -32(%rbp), %rbx
+	movq %rbx, %rsi
+	imulq $1, %rsi
+	movq %rdx, %rbx
+	addq %rsi, %rbx
+	movq %rbx, -48(%rbp)
+	movq -48(%rbp), %rsi
+	movzbq (%rsi), %rbx
+	movq %rbx, %rsi
+	cmpq $35, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable52
-	movq %rcx, %rbx
-	cmpq $43, %rbx
-	sete %bl
-	movzbq %bl, %rbx
-	testq %rbx, %rbx
+	movq %rbx, %rsi
+	cmpq $43, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable52
 	jmp .lable53
 .lable52:
-	movq $1, %rbx
+	movq $1, %rsi
 	jmp .lable54
 .lable53:
-	movq $0, %rbx
+	movq $0, %rsi
 .lable54:
-	testq %rbx, %rbx
+	testq %rsi, %rsi
 	jnz .lable55
 	jmp .lable56
 .lable55:
 	movq $1, exit(%rip)
 	jmp .lable84
 .lable56:
-	movq -48(%rbp), %rcx
-	movzbq (%rcx), %rbx
-	movq %rbx, %rcx
-	cmpq $42, %rcx
-	sete %cl
-	movzbq %cl, %rcx
-	testq %rcx, %rcx
+	movq %rbx, %rsi
+	cmpq $42, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable58
 	jmp .lable59
 .lable58:
 	movq $1, grown(%rip)
 	call new_food
 .lable59:
-	movq -48(%rbp), %rcx
+	movq -48(%rbp), %rsi
 	movq $64, %rbx
-	movb %bl, (%rcx)
+	movb %bl, (%rsi)
 	call kbhit
-	movq %rax, %rcx
-	testq %rcx, %rcx
+	movq %rax, %rsi
+	testq %rsi, %rsi
 	jnz .lable60
 	jmp .lable84
 .lable60:
 	call getch
-	movq %rax, %rcx
-	movb %cl, -49(%rbp)
-	movsbq -49(%rbp), %rcx
-	cmpq $97, %rcx
-	sete %cl
-	movzbq %cl, %rcx
-	movq %rcx, %rbx
+	movq %rax, %rsi
+	movb %sil, -49(%rbp)
+	movsbq -49(%rbp), %rsi
+	cmpq $97, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	movq %rsi, %rbx
 	testq %rbx, %rbx
 	setz %bl
 	movzbq %bl, %rbx
@@ -558,31 +555,31 @@ update:
 	cmpq $1, %rbx
 	setne %bl
 	movzbq %bl, %rbx
-	movq %rbx, %rcx
-	testq %rcx, %rcx
-	setz %cl
-	movzbq %cl, %rcx
-	testq %rcx, %rcx
+	movq %rbx, %rsi
+	testq %rsi, %rsi
+	setz %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable62
 	jmp .lable63
 .lable62:
-	movq $0, %rcx
+	movq $0, %rsi
 	jmp .lable64
 .lable63:
-	movq $1, %rcx
+	movq $1, %rsi
 .lable64:
-	testq %rcx, %rcx
+	testq %rsi, %rsi
 	jnz .lable65
 	jmp .lable66
 .lable65:
 	movq $0, dir(%rip)
 	jmp .lable84
 .lable66:
-	movsbq -49(%rbp), %rcx
-	cmpq $100, %rcx
-	sete %cl
-	movzbq %cl, %rcx
-	movq %rcx, %rbx
+	movsbq -49(%rbp), %rsi
+	cmpq $100, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	movq %rsi, %rbx
 	testq %rbx, %rbx
 	setz %bl
 	movzbq %bl, %rbx
@@ -592,31 +589,31 @@ update:
 	cmpq $0, %rbx
 	setne %bl
 	movzbq %bl, %rbx
-	movq %rbx, %rcx
-	testq %rcx, %rcx
-	setz %cl
-	movzbq %cl, %rcx
-	testq %rcx, %rcx
+	movq %rbx, %rsi
+	testq %rsi, %rsi
+	setz %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable68
 	jmp .lable69
 .lable68:
-	movq $0, %rcx
+	movq $0, %rsi
 	jmp .lable70
 .lable69:
-	movq $1, %rcx
+	movq $1, %rsi
 .lable70:
-	testq %rcx, %rcx
+	testq %rsi, %rsi
 	jnz .lable71
 	jmp .lable72
 .lable71:
 	movq $1, dir(%rip)
 	jmp .lable84
 .lable72:
-	movsbq -49(%rbp), %rcx
-	cmpq $119, %rcx
-	sete %cl
-	movzbq %cl, %rcx
-	movq %rcx, %rbx
+	movsbq -49(%rbp), %rsi
+	cmpq $119, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	movq %rsi, %rbx
 	testq %rbx, %rbx
 	setz %bl
 	movzbq %bl, %rbx
@@ -626,31 +623,31 @@ update:
 	cmpq $3, %rbx
 	setne %bl
 	movzbq %bl, %rbx
-	movq %rbx, %rcx
-	testq %rcx, %rcx
-	setz %cl
-	movzbq %cl, %rcx
-	testq %rcx, %rcx
+	movq %rbx, %rsi
+	testq %rsi, %rsi
+	setz %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable74
 	jmp .lable75
 .lable74:
-	movq $0, %rcx
+	movq $0, %rsi
 	jmp .lable76
 .lable75:
-	movq $1, %rcx
+	movq $1, %rsi
 .lable76:
-	testq %rcx, %rcx
+	testq %rsi, %rsi
 	jnz .lable77
 	jmp .lable78
 .lable77:
 	movq $2, dir(%rip)
 	jmp .lable84
 .lable78:
-	movsbq -49(%rbp), %rcx
-	cmpq $115, %rcx
-	sete %cl
-	movzbq %cl, %rcx
-	movq %rcx, %rbx
+	movsbq -49(%rbp), %rsi
+	cmpq $115, %rsi
+	sete %sil
+	movzbq %sil, %rsi
+	movq %rsi, %rbx
 	testq %rbx, %rbx
 	setz %bl
 	movzbq %bl, %rbx
@@ -660,20 +657,20 @@ update:
 	cmpq $2, %rbx
 	setne %bl
 	movzbq %bl, %rbx
-	movq %rbx, %rcx
-	testq %rcx, %rcx
-	setz %cl
-	movzbq %cl, %rcx
-	testq %rcx, %rcx
+	movq %rbx, %rsi
+	testq %rsi, %rsi
+	setz %sil
+	movzbq %sil, %rsi
+	testq %rsi, %rsi
 	jnz .lable80
 	jmp .lable81
 .lable80:
-	movq $0, %rcx
+	movq $0, %rsi
 	jmp .lable82
 .lable81:
-	movq $1, %rcx
+	movq $1, %rsi
 .lable82:
-	testq %rcx, %rcx
+	testq %rsi, %rsi
 	jnz .lable83
 	jmp .lable84
 .lable83:
@@ -688,8 +685,8 @@ main:
 	movq %rsp, %rbp
 	call init
 .lable85:
-	movq exit(%rip), %rcx
-	testq %rcx, %rcx
+	movq exit(%rip), %rsi
+	testq %rsi, %rsi
 	jnz .lable86
 	call draw
 	call update
