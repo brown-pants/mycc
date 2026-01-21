@@ -5,3 +5,5 @@ project(mycc)
 file(GLOB_RECURSE SRC "./src/*.cpp" "./src/*.h")
 
 add_executable(mycc ${SRC})
+
+target_compile_features(mycc PRIVATE cxx_std_17)
