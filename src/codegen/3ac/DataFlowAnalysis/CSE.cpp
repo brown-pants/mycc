@@ -1,5 +1,6 @@
 #include "CSE.h"
 #include <algorithm>
+#include <iterator>
 
 CSE::CSE(std::vector<TACGenerator::Quaternion> &tac) : tac(tac), dfg(tac)
 {
