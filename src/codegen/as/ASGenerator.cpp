@@ -884,6 +884,24 @@ void ASGenerator::arithmetic(const std::string &op, const std::string &arg1, con
             m_ignoreRegs.insert(rdxId);
             m_ignoreRegs.insert(regAllocator.getRegId(code1));
             RegId regid = getTempReg();
+            // stupid. 2026/05/15 1:23
+            if (regid == regAllocator.getRegId("%rax") || regid == regAllocator.getRegId("%rdx"))
+            {
+                RegId new_reg = getTempReg();
+                if (new_reg == regAllocator.getRegId("%rax") || new_reg == regAllocator.getRegId("%rdx"))
+                {
+                    RegId n_new_reg = getTempReg();
+                    regAllocator.freeReg(regid);
+                    regAllocator.freeReg(new_reg);
+                    regid = n_new_reg;
+                }
+                else
+                {
+                    regAllocator.freeReg(regid);
+                    regid = new_reg;
+                }
+            }
+            
             std::string reg64 = regAllocator.toReg64(regid);
             asc += "\t" + mov2 + " " + code2 + ", " + reg64 + "\n";     //  {movq | movabsq | movsbq} {arg2}, {reg64}
             code2 = reg64;
